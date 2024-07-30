@@ -6,12 +6,18 @@ import { UserModule } from './user/user.module';
 import { WordModule } from './word/word.module';
 import { ConfigModule } from '@nestjs/config';
 import appConfig from './config/app.config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmConfigService } from './database/typeorm-config.service';
+import databaseConfig from './config/database.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig],
+      load: [appConfig, databaseConfig],
+    }),
+    TypeOrmModule.forRootAsync({
+      useClass: TypeOrmConfigService,
     }),
     AuthModule,
     UserModule,

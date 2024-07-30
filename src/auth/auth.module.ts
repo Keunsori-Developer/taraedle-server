@@ -6,17 +6,22 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { GoogleStrategy } from './strategy/google.strategy';
 import { JwtStrategy } from './strategy/jwt.strategy';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Token } from 'src/entity/token.entity';
 
 @Module({
   imports: [
     ConfigModule,
     PassportModule,
-    UserModule,
-    JwtModule.register({
-      secret: `c6@8!s16f5dQ87fw`,
-      signOptions: { expiresIn: '1y' },
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        return { global: true, secret: configService.get('app.jwtSecret'), signOptions: { expiresIn: '3d' } };
+      },
     }),
+    TypeOrmModule.forFeature([Token]),
+    UserModule,
   ],
   providers: [AuthService, GoogleStrategy, JwtStrategy],
   controllers: [AuthController],
