@@ -17,6 +17,11 @@ export class UserService {
     return newUser;
   }
 
+  async fineOneById(id: User['id']) {
+    const user = await this.userRepository.findOne({ where: { id } });
+    return user;
+  }
+
   async findOneByProviderId(provider: User['provider'], providerId: User['providerId']) {
     const user = await this.userRepository.findOne({ where: { provider, providerId } });
     return user;

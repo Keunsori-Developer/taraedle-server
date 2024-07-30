@@ -7,4 +7,5 @@ export const JwtPayload = createParamDecorator((data: unknown, ctx: ExecutionCon
 
 export interface JwtPayLoad {
   id: string;
+  tkn: string;
 }

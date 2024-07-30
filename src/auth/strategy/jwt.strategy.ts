@@ -1,18 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
+import { JwtTokenType } from '../enum/jwt-token-type.enum';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
-  constructor() {
+  constructor(private configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
+      secretOrKey: configService.get('app.jwtSecret'),
     });
   }
 
-  async validate(payload: any) {
-    return { userId: payload.sub, username: payload.username, provider: payload.provider };
+  async validate(payload: JwtPayLoad) {
+    if (payload.tkn !== JwtTokenType.ACCESS) {
+      throw new UnauthorizedException('유효하지 않은 토큰');
+    }
+
+    return payload;
   }
 }

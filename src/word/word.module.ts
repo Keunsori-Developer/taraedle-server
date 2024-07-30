@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { WordController } from './word.controller';
 
-@Module({})
+@Module({
+  controllers: [WordController],
+})
 export class WordModule {}

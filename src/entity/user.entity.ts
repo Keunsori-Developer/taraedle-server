@@ -4,8 +4,8 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedCol
 
 @Entity({ name: 'user' })
 export class User {
-  @PrimaryGeneratedColumn({ name: 'id' })
-  id: number;
+  @PrimaryGeneratedColumn({ name: 'id', type: 'bigint' })
+  id: string;
 
   @Column({ name: 'email', type: 'varchar' })
   email: string;

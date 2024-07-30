@@ -1,5 +1,7 @@
+import { UserProvider } from 'src/user/enum/user-provider.enum';
+
 export interface GoogleUser {
-  provider: string;
+  provider: UserProvider;
   providerId: string;
   name: string;
   email: string;

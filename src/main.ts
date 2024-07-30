@@ -13,7 +13,12 @@ async function bootstrap() {
     }),
   );
 
-  const config = new DocumentBuilder().setTitle('Towerdle').setDescription('Towerdle  API').setVersion('1.0').build();
+  const config = new DocumentBuilder()
+    .setTitle('Towerdle')
+    .setDescription('Towerdle  API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
