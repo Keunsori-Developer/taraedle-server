@@ -14,11 +14,18 @@ import { SWAGGER_RESPONSES } from 'src/common/constant/swagger.constant';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({
+    summary: ' Google 로그인 요청',
+    description: 'Google 로그인 이후 /auth/login/google/callback 으로 리다이렉트됨',
+  })
   @Get('login/google')
   @UseGuards(AuthGuard('google'))
   async googleLogin() {}
 
-  @ApiOperation({})
+  @ApiOperation({
+    summary: 'Google 로그인 이후 리다이렉트 페이지',
+    description: 'Google 로그인 이후 리다이렉트 페이지, 회원 확인 이후 accesstoken과 refreshtoken 반환',
+  })
   @ApiGetResponse(TokenResDto)
   @Get('login/google/callback')
   @UseGuards(AuthGuard('google'))
@@ -26,7 +33,10 @@ export class AuthController {
     return await this.authService.loginCallback(payload);
   }
 
-  @ApiOperation({ summary: 'AccessToken 재발급 요청' })
+  @ApiOperation({
+    summary: 'AccessToken 재발급 요청',
+    description: 'AccessToken 만료로 401을 받았을때 AccessToken 재발급 요청',
+  })
   @ApiBody({ type: RefreshTokenReqDto })
   @ApiPostResponse(TokenResDto)
   @ApiBadRequestResponse(SWAGGER_RESPONSES.BADREQUEST)
@@ -37,7 +47,10 @@ export class AuthController {
     return await this.authService.refresh(refreshToken);
   }
 
-  @ApiOperation({ summary: '로그아웃' })
+  @ApiOperation({
+    summary: '로그아웃',
+    description: '프론트단에서 AccessToken 및 RefreshToken 삭제 후 서버에서 RefreshToken 삭제 처리',
+  })
   @ApiBody({ type: LogoutResDto })
   @ApiOkResponse({ description: '성공' })
   @ApiBadRequestResponse(SWAGGER_RESPONSES.BADREQUEST)
