@@ -11,7 +11,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { LogoutResDto, RefreshTokenReqDto } from './dto/request.dto';
+import { LogoutResDto, RefreshTokenReqDto, TestResDto } from './dto/request.dto';
 import { TokenResDto } from './dto/response.dto';
 import { ApiGetResponse, ApiPostResponse } from 'src/common/decorator/swagger.decorator';
 import { SWAGGER_RESPONSES } from 'src/common/constant/swagger.constant';
@@ -23,7 +23,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiOperation({
-    summary: ' Google 로그인 요청',
+    summary: '웹 용 Google 로그인 요청',
     description: '/auth/login/google/callback 으로 리다이렉트 되고, 회원 확인 후 accesstoken과 refreshtoken 반환',
   })
   @ApiGetResponse(TokenResDto)
@@ -40,6 +40,15 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleLoginCallback(@GooglePayload() payload): Promise<TokenResDto> {
     return await this.authService.loginCallback(payload);
+  }
+
+  @ApiOperation({})
+  @ApiBody({ type: TestResDto })
+  @Post('test')
+  async verifyToken(@Body() dto: TestResDto) {
+    const { idToken } = dto;
+    const userInfo = await this.authService.test(idToken);
+    return userInfo;
   }
 
   @ApiOperation({
