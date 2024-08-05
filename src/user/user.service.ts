@@ -13,7 +13,7 @@ export class UserService {
     const { name, providerId, email } = user;
     const userEntity = this.userRepository.create({ name, provider: UserProvider.GOOGLE, providerId, email });
 
-    const newUser = await this.userRepository.insert(userEntity);
+    const newUser = await this.userRepository.save(userEntity);
     return newUser;
   }
 

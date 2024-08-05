@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsJWT, IsString } from 'class-validator';
+import { IsJWT } from 'class-validator';
 
 export class RefreshTokenReqDto {
   @ApiProperty()
@@ -13,8 +13,8 @@ export class LogoutResDto {
   refreshToken: string;
 }
 
-export class TestResDto {
+export class AppLoginDto {
   @ApiProperty()
-  @IsString()
-  idToken: string;
+  @IsJWT()
+  jwt: string;
 }

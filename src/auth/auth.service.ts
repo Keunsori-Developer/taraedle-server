@@ -11,6 +11,7 @@ import { JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
 import { JwtTokenType } from './enum/jwt-token-type.enum';
 import { User } from 'src/entity/user.entity';
 import { OAuth2Client } from 'google-auth-library';
+import { UserProvider } from 'src/user/enum/user-provider.enum';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
   private readonly refreshTokenExpiresIn = '30d';
   private client: OAuth2Client;
   private readonly CLIENT_ID = '236075874307-3i9rfec1lujamn3dih8g36sv5fi4f1vt.apps.googleusercontent.com';
+  // private readonly CLIENT_ID = '502833253886-4k6q291k6cg8f7akujj7k360t4fabcra.apps.googleusercontent.com'; //내꺼
 
   constructor(
     @InjectRepository(Token) private readonly tokenRepository: Repository<Token>,
@@ -82,23 +84,46 @@ export class AuthService {
   async logout(token: string) {
     await this.tokenRepository.delete({ refreshToken: token });
   }
-  // https://developers.google.com/identity/gsi/web/guides/verify-google-id-token?hl=ko#node.js
-  async test(idToken: string) {
-    const ticket = await this.client.verifyIdToken({
-      idToken: idToken,
-      audience: this.CLIENT_ID,
-    });
 
-    const payload = ticket.getPayload();
-    if (!payload) {
-      throw new Error('Invalid token');
+  async appLogin(idToken: string) {
+    try {
+      const ticket = await this.client.verifyIdToken({
+        idToken: idToken,
+        audience: this.CLIENT_ID,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new BadRequestException('Invalid token');
+      }
+
+      const googleUser: GoogleUser = {
+        email: payload['email'],
+        name: payload['name'],
+        provider: UserProvider.GOOGLE,
+        providerId: payload['sub'],
+      };
+      console.log('🚀 ~ AuthService ~ appLogin ~ googleUser:', googleUser);
+
+      let user = await this.userService.findOneByProviderId(UserProvider.GOOGLE, googleUser.providerId);
+
+      if (!user) {
+        user = await this.userService.createGoogleUser(googleUser);
+      }
+
+      const newAccessToken = this.generateAccessToken(user.id);
+      const newRefreshToken = this.generateRefreshToken(user.id);
+
+      const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
+      await this.tokenRepository.save(refreshTokenEntity);
+
+      const resDto = new TokenResDto(newAccessToken, newRefreshToken);
+
+      return resDto;
+    } catch (e) {
+      console.log(e);
+      throw new BadRequestException('Invalid Token');
     }
-
-    return {
-      userId: payload['sub'],
-      email: payload['email'],
-      name: payload['name'],
-    };
   }
 
   private generateAccessToken(id: string) {
