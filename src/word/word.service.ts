@@ -27,15 +27,20 @@ export class WordService {
       .split(',')
       .map((word) => word.trim())
       .filter((word) => word.length > 0);
-    console.log('🚀 ~ WordService ~ addWordsIntoDatabase ~ wordList:', wordList);
 
-    const wordEntities: DeepPartial<Word> = wordList.map((word) => {
-      const { length } = this.checkWord(word);
+    const wordEntities: DeepPartial<Word>[] = [];
 
-      return { value: word, length };
-    });
+    for (const word of wordList) {
+      const existingWord = await this.wordRepository.findOne({ where: { value: word } });
+      if (!existingWord) {
+        const { length } = this.checkWord(word);
+        wordEntities.push(this.wordRepository.create({ value: word, length }));
+      }
+    }
 
-    await this.wordRepository.save(wordEntities);
+    if (wordEntities.length > 0) {
+      await this.wordRepository.save(wordEntities);
+    }
   }
 
   checkWord(word: string) {
