@@ -1,8 +1,9 @@
-import { Controller, Get, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { SWAGGER_RESPONSES } from 'src/common/constant/swagger.constant';
 import { WordService } from './word.service';
+import { AddWordReqDto } from './dto/request.dto';
 
 @ApiTags('Word')
 @ApiUnauthorizedResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
@@ -13,8 +14,8 @@ export class WordController {
   @ApiOperation({ summary: '랜덤한 단어 한개 반환' })
   @Get()
   @HttpCode(HttpStatus.OK)
-  getWord() {
-    return this.wordService.getRandomWord();
+  async getWord() {
+    return await this.wordService.getRandomWord();
   }
 
   @ApiOperation({ summary: '랜덤한 단어 한개 반환, jwt 인증 필요' })
@@ -22,7 +23,23 @@ export class WordController {
   @Get('authtest')
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
-  getWordAuth() {
-    return this.wordService.getRandomWord();
+  async getWordAuth() {
+    return await this.wordService.getRandomWord();
+  }
+
+  @ApiOperation({})
+  @ApiParam({ name: 'word' })
+  @Get('check/:word')
+  @HttpCode(HttpStatus.OK)
+  checkWord(@Param('word') word: string) {
+    return this.wordService.checkWord(word);
+  }
+
+  @ApiOperation({ summary: 'db에 단어 추가' })
+  @ApiBody({ type: AddWordReqDto })
+  @Post('')
+  @HttpCode(HttpStatus.OK)
+  addWords(@Body() dto: AddWordReqDto) {
+    return this.wordService.addWordsIntoDatabase(dto.words);
   }
 }
