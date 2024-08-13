@@ -3,20 +3,36 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FINALS, INITIALS, MEDIALS } from 'src/common/constant/hangul.constant';
 import { Word } from 'src/entity/word.entity';
 import { DeepPartial, Repository } from 'typeorm';
+import { GetWordReqDto } from './dto/request.dto';
 
 @Injectable()
 export class WordService {
   constructor(@InjectRepository(Word) private wordRepository: Repository<Word>) {}
-  async getRandomWord() {
-    const randomWord = await this.wordRepository
-      .createQueryBuilder()
-      .select('value')
-      .orderBy('RANDOM()')
-      .limit(1)
-      .getRawOne();
+  async getRandomWord(dto: GetWordReqDto) {
+    const randomWordQueryBuilder = this.wordRepository.createQueryBuilder().select('value');
+
+    if (dto.length) {
+      randomWordQueryBuilder.andWhere('length = :length', { length: dto.length });
+    }
+
+    if (dto.count) {
+      randomWordQueryBuilder.andWhere('count = :count', { count: dto.count });
+    }
+
+    if (dto.complexVowel) {
+      randomWordQueryBuilder.andWhere('has_complex_vowel = :complexVowel', { complexVowel: dto.complexVowel });
+    }
+
+    if (dto.complexConsonant) {
+      randomWordQueryBuilder.andWhere('has_complex_consonant = :complexConsonant', {
+        complexConsonant: dto.complexConsonant,
+      });
+    }
+
+    const randomWord = await randomWordQueryBuilder.orderBy('RANDOM()').limit(1).getRawOne();
 
     if (!randomWord) {
-      throw new BadRequestException();
+      throw new BadRequestException('해당하는 단어가 없습니다');
     }
 
     return randomWord;
