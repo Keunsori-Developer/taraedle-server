@@ -33,8 +33,13 @@ export class WordService {
     for (const word of wordList) {
       const existingWord = await this.wordRepository.findOne({ where: { value: word } });
       if (!existingWord) {
-        const { length } = this.checkWord(word);
-        wordEntities.push(this.wordRepository.create({ value: word, length }));
+        const { length, count, complexConsonantCount, complexVowelCount } = this.checkWord(word);
+        const hasComplexConsonant = complexConsonantCount > 0;
+        const hasComplexVowel = complexVowelCount > 0;
+
+        wordEntities.push(
+          this.wordRepository.create({ value: word, length, count, hasComplexConsonant, hasComplexVowel }),
+        );
       }
     }
 
@@ -44,10 +49,88 @@ export class WordService {
   }
 
   checkWord(word: string) {
-    const { arr, complexConsonantCount, complexVowelCount } = this.decomposeConstants(this.decomposeHangulString(word));
+    const { arr, complexConsonantCount, complexVowelCount } = this.decomposeConstantsHandle(
+      this.decomposeHangulString(word),
+    );
     const length = word.length;
-    const cnt = arr.length;
-    return { arr, length, cnt, complexConsonantCount, complexVowelCount };
+    const count = arr.length;
+    return { arr, length, count, complexConsonantCount, complexVowelCount };
+  }
+
+  /**
+   * 한들버전
+   * ㅃ,ㅉ,ㄸ,ㄲ,ㅆ,ㅒ,ㅖ는 한개로 처리, 복합 카운트 증가 시키지 않음.
+   * ㅐ,ㅔ 등도 한개로 처리.
+   */
+  private decomposeConstantsHandle(arr: string[]) {
+    let complexConsonantCount = 0;
+    let complexVowelCount = 0;
+
+    const decomposed = arr.flatMap((char) => {
+      switch (char) {
+        case 'ㄳ':
+          complexConsonantCount++;
+          return ['ㄱ', 'ㅅ'];
+        case 'ㄵ':
+          complexConsonantCount++;
+          return ['ㄴ', 'ㅈ'];
+        case 'ㄶ':
+          complexConsonantCount++;
+          return ['ㄴ', 'ㅎ'];
+        case 'ㄺ':
+          complexConsonantCount++;
+          return ['ㄹ', 'ㄱ'];
+        case 'ㄻ':
+          complexConsonantCount++;
+          return ['ㄹ', 'ㅁ'];
+        case 'ㄼ':
+          complexConsonantCount++;
+          return ['ㄹ', 'ㅂ'];
+        case 'ㄽ':
+          complexConsonantCount++;
+          return ['ㄹ', 'ㅅ'];
+        case 'ㄾ':
+          complexConsonantCount++;
+          return ['ㄹ', 'ㅌ'];
+        case 'ㄿ':
+          complexConsonantCount++;
+          return ['ㄹ', 'ㅍ'];
+        case 'ㅀ':
+          complexConsonantCount++;
+          return ['ㄹ', 'ㅎ'];
+        case 'ㅄ':
+          complexConsonantCount++;
+          return ['ㅂ', 'ㅅ'];
+        case 'ㅘ':
+          complexVowelCount++;
+          return ['ㅗ', 'ㅏ'];
+        case 'ㅙ':
+          complexVowelCount++;
+          return ['ㅗ', 'ㅐ'];
+        case 'ㅚ':
+          complexVowelCount++;
+          return ['ㅗ', 'ㅣ'];
+        case 'ㅝ':
+          complexVowelCount++;
+          return ['ㅜ', 'ㅓ'];
+        case 'ㅞ':
+          complexVowelCount++;
+          return ['ㅜ', 'ㅔ'];
+        case 'ㅟ':
+          complexVowelCount++;
+          return ['ㅜ', 'ㅣ'];
+        case 'ㅢ':
+          complexVowelCount++;
+          return ['ㅡ', 'ㅣ'];
+        default:
+          return [char];
+      }
+    });
+    return {
+      arr: decomposed,
+      complexConsonantCount,
+      complexVowelCount,
+    };
   }
 
   private decomposeHangulString(str: string): string[] {
