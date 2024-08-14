@@ -14,8 +14,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Towerdle')
-    .setDescription('Towerdle  API')
+    .setTitle('Taraedle')
+    .setDescription('Taraedle  API')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
