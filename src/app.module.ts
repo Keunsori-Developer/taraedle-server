@@ -10,6 +10,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmConfigService } from './database/typeorm-config.service';
 import databaseConfig from './config/database.config';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { AchievementModule } from './achievement/achievement.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     AuthModule,
     UserModule,
     WordModule,
+    AchievementModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,6 +1,15 @@
 import { Exclude } from 'class-transformer';
 import { UserProvider } from 'src/user/enum/user-provider.enum';
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { SolvedWord } from './solved_word.entity';
 
 @Entity({ name: 'user' })
 export class User {
@@ -18,6 +27,9 @@ export class User {
 
   @Column({ name: 'provider_id', type: 'varchar' })
   providerId: string;
+
+  @OneToMany(() => SolvedWord, (solvedWord) => solvedWord.user)
+  solvedWords: SolvedWord[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
