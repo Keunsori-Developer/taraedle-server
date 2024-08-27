@@ -21,9 +21,3 @@ export class InvalidWordException extends InvalidException {
     super({ errorCode: CustomExceptionCode.INVALID_WORD, message: message });
   }
 }
-
-export class InvalidJwtTokenException extends InvalidException {
-  constructor(message?: string | HttpExceptionOptions) {
-    super({ errorCode: CustomExceptionCode.INVALID_JWT, message: message });
-  }
-}

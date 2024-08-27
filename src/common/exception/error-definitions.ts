@@ -1,7 +1,7 @@
 import { ApiErrorResponseOption } from '../decorator/error-response.decorator';
 import { CustomExceptionCode } from '../enum/custom-exception-code.enum';
-import { InvalidJwtTokenException, InvalidUserException, InvalidWordException } from './invalid.exception';
-import { ExpiredJwtException } from './token.exception';
+import { InvalidUserException, InvalidWordException } from './invalid.exception';
+import { ExpiredJwtException, InvalidJwtException } from './token.exception';
 
 export const CustomErrorDefinitions: Record<CustomExceptionCode, ApiErrorResponseOption> = {
   [CustomExceptionCode.INVALID_USER]: {
@@ -12,7 +12,7 @@ export const CustomErrorDefinitions: Record<CustomExceptionCode, ApiErrorRespons
   },
 
   [CustomExceptionCode.INVALID_JWT]: {
-    model: InvalidJwtTokenException,
+    model: InvalidJwtException,
     exampleTitle: CustomExceptionCode[CustomExceptionCode.INVALID_JWT],
     exampleDescription: `유효하지 않은 JWT토큰 (${CustomExceptionCode.INVALID_JWT})`,
     code: CustomExceptionCode.INVALID_JWT,

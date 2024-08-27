@@ -1,18 +1,18 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { SWAGGER_RESPONSES } from 'src/common/constant/swagger.constant';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import { WordService } from './word.service';
 import { AddWordReqDto, GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
 import { Jwt, JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
 
 @ApiTags('Word')
-@ApiUnauthorizedResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
 @Controller('word')
 export class WordController {
   constructor(private wordService: WordService) {}
 
   @ApiOperation({ summary: '랜덤한 단어 한개 반환' })
+  @ApiResponse({ type: GetWordReqDto })
   @Get()
   @HttpCode(HttpStatus.OK)
   async getWord(@Query() dto: GetWordReqDto) {

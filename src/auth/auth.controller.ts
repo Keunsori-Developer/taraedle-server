@@ -2,19 +2,10 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@n
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { GooglePayload } from 'src/common/decorator/google-payload.decorator';
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiExcludeEndpoint,
-  ApiExtraModels,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiExcludeEndpoint, ApiExtraModels, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LogoutResDto, RefreshTokenReqDto, AppLoginDto } from './dto/request.dto';
 import { TokenResDto } from './dto/response.dto';
 import { ApiGetResponse, ApiPostResponse } from 'src/common/decorator/swagger.decorator';
-import { SWAGGER_RESPONSES } from 'src/common/constant/swagger.constant';
 
 @ApiTags('Auth')
 @ApiExtraModels(TokenResDto, LogoutResDto, RefreshTokenReqDto)
@@ -28,7 +19,6 @@ export class AuthController {
   })
   @ApiBody({ type: AppLoginDto })
   @ApiGetResponse(TokenResDto)
-  @ApiBadRequestResponse(SWAGGER_RESPONSES.BADREQUEST)
   @Post('login/app/google')
   async appLogin(@Body() dto: AppLoginDto) {
     const { jwt: idToken } = dto;
@@ -61,7 +51,6 @@ export class AuthController {
   })
   @ApiBody({ type: RefreshTokenReqDto })
   @ApiPostResponse(TokenResDto)
-  @ApiBadRequestResponse(SWAGGER_RESPONSES.BADREQUEST)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(@Body() dto: RefreshTokenReqDto): Promise<TokenResDto> {
@@ -73,7 +62,6 @@ export class AuthController {
     summary: 'AccessToken 재발급 요청 테스트!!!!!!!!!!!!',
   })
   @ApiPostResponse(TokenResDto)
-  @ApiBadRequestResponse(SWAGGER_RESPONSES.BADREQUEST)
   @Post('refreshtest')
   @HttpCode(HttpStatus.OK)
   async refreshTEST(): Promise<TokenResDto> {
@@ -86,7 +74,6 @@ export class AuthController {
   })
   @ApiBody({ type: LogoutResDto })
   @ApiOkResponse({ description: '성공' })
-  @ApiBadRequestResponse(SWAGGER_RESPONSES.BADREQUEST)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Body() dto: LogoutResDto): Promise<void> {
