@@ -81,6 +81,24 @@ export class AuthService {
     return resDto;
   }
 
+  async refreshTEST(): Promise<TokenResDto> {
+    const id = '1';
+    const user = await this.userService.fineOneById(id);
+
+    if (!user) {
+      throw new BadRequestException('Invalid User');
+    }
+
+    const newAccessToken = this.generateAccessToken(id);
+    const newRefreshToken = this.generateRefreshToken(id);
+
+    await this.tokenRepository.save({ refreshToken: newRefreshToken });
+
+    const resDto = new TokenResDto(newAccessToken, newRefreshToken);
+
+    return resDto;
+  }
+
   async logout(token: string) {
     await this.tokenRepository.delete({ refreshToken: token });
   }

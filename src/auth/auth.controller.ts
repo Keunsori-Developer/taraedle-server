@@ -70,6 +70,17 @@ export class AuthController {
   }
 
   @ApiOperation({
+    summary: 'AccessToken 재발급 요청 테스트!!!!!!!!!!!!',
+  })
+  @ApiPostResponse(TokenResDto)
+  @ApiBadRequestResponse(SWAGGER_RESPONSES.BADREQUEST)
+  @Post('refreshtest')
+  @HttpCode(HttpStatus.OK)
+  async refreshTEST(): Promise<TokenResDto> {
+    return await this.authService.refreshTEST();
+  }
+
+  @ApiOperation({
     summary: '로그아웃',
     description: '프론트단에서 AccessToken 및 RefreshToken 삭제 후 서버에서 RefreshToken 삭제 처리',
   })

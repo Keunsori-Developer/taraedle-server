@@ -47,6 +47,7 @@ export class WordController {
   @ApiOperation({ summary: '풀이 결과 저장' })
   @ApiBody({ type: SolveWordReqDto })
   @Post('solve')
+  @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
   solveWord(@Jwt() JwtPayload: JwtPayLoad, @Body() dto: SolveWordReqDto) {
