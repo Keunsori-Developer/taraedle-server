@@ -3,7 +3,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { SWAGGER_RESPONSES } from 'src/common/constant/swagger.constant';
 import { WordService } from './word.service';
-import { AddWordReqDto, GetWordReqDto } from './dto/request.dto';
+import { AddWordReqDto, GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
+import { Jwt, JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
 
 @ApiTags('Word')
 @ApiUnauthorizedResponse(SWAGGER_RESPONSES.UNAUTHORIZED)
@@ -41,5 +42,14 @@ export class WordController {
   @HttpCode(HttpStatus.OK)
   addWords(@Body() dto: AddWordReqDto) {
     return this.wordService.addWordsIntoDatabase(dto.words);
+  }
+
+  @ApiOperation({ summary: '풀이 결과 저장' })
+  @ApiBody({ type: SolveWordReqDto })
+  @Post('solve')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.OK)
+  solveWord(@Jwt() JwtPayload: JwtPayLoad, @Body() dto: SolveWordReqDto) {
+    return this.wordService.solveWord(JwtPayload.id, dto);
   }
 }

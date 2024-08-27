@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { ToBoolean } from 'src/common/decorator/toboolean.decorator';
 
 export class AddWordReqDto {
@@ -33,4 +33,18 @@ export class GetWordReqDto {
   @IsOptional()
   @ToBoolean()
   complexConsonant?: boolean;
+}
+
+export class SolveWordReqDto {
+  @ApiProperty()
+  @IsString()
+  wordId: string;
+
+  @ApiProperty()
+  @IsNumber()
+  attempts: number;
+
+  @ApiProperty()
+  @IsBoolean()
+  isSolved: boolean;
 }

@@ -3,11 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FINALS, INITIALS, MEDIALS } from 'src/common/constant/hangul.constant';
 import { Word } from 'src/entity/word.entity';
 import { DeepPartial, Repository } from 'typeorm';
-import { GetWordReqDto } from './dto/request.dto';
+import { GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
+import { User } from 'src/entity/user.entity';
+import { SolvedWord } from 'src/entity/solved_word.entity';
 
 @Injectable()
 export class WordService {
-  constructor(@InjectRepository(Word) private wordRepository: Repository<Word>) {}
+  constructor(
+    @InjectRepository(Word) private wordRepository: Repository<Word>,
+    @InjectRepository(SolvedWord) private solvedWordRepository: Repository<SolvedWord>,
+  ) {}
   async getRandomWord(dto: GetWordReqDto) {
     const randomWordQueryBuilder = this.wordRepository.createQueryBuilder().select('value');
 
@@ -268,5 +273,12 @@ export class WordService {
       complexConsonantCount,
       complexVowelCount,
     };
+  }
+
+  async solveWord(userId: User['id'], dto: SolveWordReqDto) {
+    const { attempts, isSolved, wordId } = dto;
+    await this.solvedWordRepository.save(
+      this.solvedWordRepository.create({ attempts, isSolved, word: { id: wordId }, user: { id: userId } }),
+    );
   }
 }
