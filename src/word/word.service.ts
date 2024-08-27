@@ -6,6 +6,7 @@ import { DeepPartial, Repository } from 'typeorm';
 import { GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
 import { User } from 'src/entity/user.entity';
 import { SolvedWord } from 'src/entity/solved_word.entity';
+import { InvalidWordException } from 'src/common/exception/invalid.exception';
 
 @Injectable()
 export class WordService {
@@ -277,6 +278,12 @@ export class WordService {
 
   async solveWord(userId: User['id'], dto: SolveWordReqDto) {
     const { attempts, isSolved, wordId } = dto;
+
+    const word = await this.wordRepository.findOne({ where: { id: wordId } });
+    if (!word) {
+      throw new InvalidWordException();
+    }
+
     await this.solvedWordRepository.save(
       this.solvedWordRepository.create({ attempts, isSolved, word: { id: wordId }, user: { id: userId } }),
     );

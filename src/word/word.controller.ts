@@ -5,6 +5,9 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } 
 import { WordService } from './word.service';
 import { AddWordReqDto, GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
 import { Jwt, JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
+import { ApiErrorResponse } from 'src/common/decorator/error-response.decorator';
+import { CustomErrorDefinitions } from 'src/common/exception/error-definitions';
+import { CustomExceptionCode } from 'src/common/enum/custom-exception-code.enum';
 
 @ApiTags('Word')
 @Controller('word')
@@ -46,6 +49,7 @@ export class WordController {
 
   @ApiOperation({ summary: '풀이 결과 저장' })
   @ApiBody({ type: SolveWordReqDto })
+  @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.INVALID_WORD]])
   @Post('solve')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
