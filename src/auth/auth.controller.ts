@@ -30,7 +30,7 @@ export class AuthController {
 
   @ApiOperation({
     summary: '앱 용 Guest 로그인 요청',
-    description: `guestId를 보내지 않으면 새로운 guest 계정 생성 \n\n 리턴하는 guestId는 추후 다시 guest로그인시 필요`,
+    description: `guestId를 보내지 않으면 새로운 guest 계정 생성 후 반환 \n\n guestId를 보낸다면 기존 게스트 계정 정보 반환`,
   })
   @ApiGetResponse(AppGuestLoginResDto)
   @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.INVALID_USER]])
@@ -75,6 +75,7 @@ export class AuthController {
 
   @ApiOperation({
     summary: 'AccessToken 재발급 요청 테스트!!!!!!!!!!!!',
+    description: '사용하지마시오',
   })
   @ApiPostResponse(TokenResDto)
   @Post('refreshtest')

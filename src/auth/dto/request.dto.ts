@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsJWT, IsOptional, IsUUID } from 'class-validator';
 
 export class RefreshTokenReqDto {
@@ -20,7 +20,7 @@ export class AppLoginReqDto {
 }
 
 export class AppGuestLoginReqDto {
-  @ApiProperty()
+  @ApiPropertyOptional({ description: 'uuid 형식의 게스트 id' })
   @IsOptional()
   @IsUUID()
   guestId: string;
