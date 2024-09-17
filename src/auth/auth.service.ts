@@ -6,24 +6,27 @@ import { GoogleUser } from 'src/common/interface/provider-user.interface';
 import { Token } from 'src/entity/token.entity';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
-import { TokenResDto } from './dto/response.dto';
+import { AppGuestLoginResDto, TokenResDto } from './dto/response.dto';
 import { JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
 import { JwtTokenType } from './enum/jwt-token-type.enum';
 import { User } from 'src/entity/user.entity';
 import { OAuth2Client } from 'google-auth-library';
 import { UserProvider } from 'src/user/enum/user-provider.enum';
+import { AppGuestLoginReqDto } from './dto/request.dto';
+import { InvalidUserException } from 'src/common/exception/invalid.exception';
 
 @Injectable()
 export class AuthService {
   private readonly accessTokenExpiresIn = '30m';
   private readonly refreshTokenExpiresIn = '30d';
   private client: OAuth2Client;
-  private readonly CLIENT_ID = '236075874307-3i9rfec1lujamn3dih8g36sv5fi4f1vt.apps.googleusercontent.com';
+  private readonly CLIENT_ID = this.configService.get('app.googleOauthClientId');
   // private readonly CLIENT_ID = '502833253886-4k6q291k6cg8f7akujj7k360t4fabcra.apps.googleusercontent.com'; //내꺼
+  // '236075874307-3i9rfec1lujamn3dih8g36sv5fi4f1vt.apps.googleusercontent.com'//대경
 
   constructor(
     @InjectRepository(Token) private readonly tokenRepository: Repository<Token>,
-    private configservice: ConfigService,
+    private configService: ConfigService,
     private jwtService: JwtService,
     private userService: UserService,
   ) {
@@ -103,7 +106,7 @@ export class AuthService {
     await this.tokenRepository.delete({ refreshToken: token });
   }
 
-  async appLogin(idToken: string) {
+  async appGoogleLogin(idToken: string) {
     try {
       const ticket = await this.client.verifyIdToken({
         idToken: idToken,
@@ -144,16 +147,45 @@ export class AuthService {
     }
   }
 
+  async appGuestLogin(dto: AppGuestLoginReqDto) {
+    const { guestId } = dto;
+
+    let user: User = null;
+    let isNewUser: boolean = true;
+    // 게스트 로그인
+    if (guestId) {
+      isNewUser = false;
+      user = await this.userService.findOneByProviderId(UserProvider.GUEST, guestId);
+
+      // 게스트 로그인인데 만약 없는 유저
+      if (!user) throw new InvalidUserException();
+    }
+
+    // 게스트 회원가입
+    else {
+      user = await this.userService.createGuestUser();
+    }
+
+    const newAccessToken = this.generateAccessToken(user.id);
+    const newRefreshToken = this.generateRefreshToken(user.id);
+
+    const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
+    await this.tokenRepository.save(refreshTokenEntity);
+
+    const resDto = new AppGuestLoginResDto(newAccessToken, newRefreshToken, isNewUser, user.providerId);
+    return resDto;
+  }
+
   private generateAccessToken(id: string) {
     const payload: JwtPayLoad = { id: id, tkn: JwtTokenType.ACCESS };
-    const options = { expiresIn: this.accessTokenExpiresIn, secret: this.configservice.get('app.jwtSecret') };
+    const options = { expiresIn: this.accessTokenExpiresIn, secret: this.configService.get('app.jwtSecret') };
 
     return this.jwtService.sign(payload, options);
   }
 
   private generateRefreshToken(id: string) {
     const payload: JwtPayLoad = { id: id, tkn: JwtTokenType.REFRESH };
-    const options = { expiresIn: this.refreshTokenExpiresIn, secret: this.configservice.get('app.jwtSecret') };
+    const options = { expiresIn: this.refreshTokenExpiresIn, secret: this.configService.get('app.jwtSecret') };
 
     return this.jwtService.sign(payload, options);
   }

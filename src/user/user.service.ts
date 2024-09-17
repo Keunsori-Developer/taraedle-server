@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { GoogleUser } from 'src/common/interface/provider-user.interface';
+import { GoogleUser, GuestUser } from 'src/common/interface/provider-user.interface';
 import { User } from 'src/entity/user.entity';
 import { Repository } from 'typeorm';
 import { UserProvider } from './enum/user-provider.enum';
 import { plainToInstance } from 'class-transformer';
 import { UserResDto } from './dto/response.dto';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class UserService {
@@ -16,6 +17,20 @@ export class UserService {
     const userEntity = this.userRepository.create({ name, provider: UserProvider.GOOGLE, providerId, email });
 
     const newUser = await this.userRepository.save(userEntity);
+    return newUser;
+  }
+
+  async createGuestUser() {
+    const uuid = uuidv4();
+
+    const guestUser: GuestUser = {
+      name: `Guest${uuid.slice(0, 4)}`,
+      email: '',
+      provider: UserProvider.GUEST,
+      providerId: uuid,
+    };
+
+    const newUser = await this.userRepository.save(this.userRepository.create(guestUser));
     return newUser;
   }
 

@@ -1,19 +1,21 @@
 import { Type, applyDecorators } from '@nestjs/common';
-import { ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
+import { ApiExtraModels, ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
 
-export const ApiGetResponse = <TModel extends Type<any>>(model: TModel | TModel[]) => {
-  const isArray = Array.isArray(model);
-  const modelSchema = isArray ? getSchemaPath((model as Type<any>[])[0]) : getSchemaPath(model as Type<any>);
-
+export const ApiGetResponse = <TModel extends Type<any>>(model: TModel) => {
   return applyDecorators(
+    ApiExtraModels(model),
     ApiOkResponse({
-      schema: isArray ? { type: 'array', items: { $ref: modelSchema } } : { allOf: [{ $ref: modelSchema }] },
+      schema: {
+        allOf: [{ $ref: getSchemaPath(model) }],
+      },
+      type: model,
     }),
   );
 };
 
 export const ApiPostResponse = <TModel extends Type<any>>(model: TModel) => {
   return applyDecorators(
+    ApiExtraModels(model),
     ApiOkResponse({
       schema: {
         allOf: [{ $ref: getSchemaPath(model) }],

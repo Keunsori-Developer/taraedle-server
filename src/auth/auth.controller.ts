@@ -3,12 +3,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { GooglePayload } from 'src/common/decorator/google-payload.decorator';
 import { ApiBody, ApiExcludeEndpoint, ApiExtraModels, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { LogoutResDto, RefreshTokenReqDto, AppLoginDto } from './dto/request.dto';
-import { TokenResDto } from './dto/response.dto';
+import { LogoutReqDto, RefreshTokenReqDto, AppLoginReqDto, AppGuestLoginReqDto } from './dto/request.dto';
+import { AppGuestLoginResDto, TokenResDto } from './dto/response.dto';
 import { ApiGetResponse, ApiPostResponse } from 'src/common/decorator/swagger.decorator';
+import { ApiErrorResponse } from 'src/common/decorator/error-response.decorator';
+import { CustomErrorDefinitions } from 'src/common/exception/error-definitions';
+import { CustomExceptionCode } from 'src/common/enum/custom-exception-code.enum';
 
 @ApiTags('Auth')
-@ApiExtraModels(TokenResDto, LogoutResDto, RefreshTokenReqDto)
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -17,12 +19,25 @@ export class AuthController {
     summary: '앱 용 Google 로그인 요청',
     description: 'google에서 받은 jwt를 요청으로 보내고, 회원 확인 후 accesstoken과 refreshtoken 반환 ',
   })
-  @ApiBody({ type: AppLoginDto })
-  @ApiGetResponse(TokenResDto)
+  @ApiBody({ type: AppLoginReqDto })
+  @ApiPostResponse(TokenResDto)
   @Post('login/app/google')
-  async appLogin(@Body() dto: AppLoginDto) {
+  @HttpCode(HttpStatus.CREATED)
+  async appLogin(@Body() dto: AppLoginReqDto) {
     const { jwt: idToken } = dto;
-    return await this.authService.appLogin(idToken);
+    return await this.authService.appGoogleLogin(idToken);
+  }
+
+  @ApiOperation({
+    summary: '앱 용 Guest 로그인 요청',
+    description: `guestId를 보내지 않으면 새로운 guest 계정 생성 \n\n 리턴하는 guestId는 추후 다시 guest로그인시 필요`,
+  })
+  @ApiGetResponse(AppGuestLoginResDto)
+  @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.INVALID_USER]])
+  @Post('login/app/guest')
+  @HttpCode(HttpStatus.CREATED)
+  async appGuestLogin(@Body() dto: AppGuestLoginReqDto) {
+    return await this.authService.appGuestLogin(dto);
   }
 
   @ApiOperation({
@@ -52,7 +67,7 @@ export class AuthController {
   @ApiBody({ type: RefreshTokenReqDto })
   @ApiPostResponse(TokenResDto)
   @Post('refresh')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   async refresh(@Body() dto: RefreshTokenReqDto): Promise<TokenResDto> {
     const { refreshToken } = dto;
     return await this.authService.refresh(refreshToken);
@@ -72,11 +87,11 @@ export class AuthController {
     summary: '로그아웃',
     description: '프론트단에서 AccessToken 및 RefreshToken 삭제 후 서버에서 RefreshToken 삭제 처리',
   })
-  @ApiBody({ type: LogoutResDto })
+  @ApiBody({ type: LogoutReqDto })
   @ApiOkResponse({ description: '성공' })
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Body() dto: LogoutResDto): Promise<void> {
+  async logout(@Body() dto: LogoutReqDto): Promise<void> {
     const { refreshToken } = dto;
     await this.authService.logout(refreshToken);
   }
