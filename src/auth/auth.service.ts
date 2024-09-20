@@ -55,7 +55,11 @@ export class AuthService {
       console.log('🚀 ~ AuthService ~ googleLoginCallback ~ code:', code);
 
       // 'code'를 사용하여 Google 서버에 액세스 토큰 요청
-      const { tokens } = await this.client.getToken(code);
+      const { tokens } = await this.client.getToken({
+        code: code,
+        client_id: this.CLIENT_ID,
+        redirect_uri: this.CLIENT_REDIRECT,
+      });
 
       const { id_token, access_token } = tokens;
     } catch (e) {
