@@ -13,7 +13,7 @@ class EnvironmentVariablesValidator {
 
   @IsString()
   @IsNotEmpty()
-  GOOGLE_LOGIN_CALLBACK_URL: string;
+  GOOGLE_OAUTH_REDIRECT_URI: string;
 
   @IsString()
   @IsNotEmpty()
@@ -26,7 +26,7 @@ export default registerAs('app', () => {
   return {
     googleOauthClientId: process.env.GOOGLE_OAUTH_CLIENT_ID,
     googleOauthClientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-    googleLoginCallbackUrl: process.env.GOOGLE_LOGIN_CALLBACK_URL,
+    googleOauthRedirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI,
     jwtSecret: process.env.JWT_SECRET,
   };
 });

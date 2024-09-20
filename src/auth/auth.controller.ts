@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -14,6 +14,8 @@ import { ApiGetResponse, ApiPostResponse } from 'src/common/decorator/swagger.de
 import { ApiErrorResponse } from 'src/common/decorator/error-response.decorator';
 import { CustomErrorDefinitions } from 'src/common/exception/error-definitions';
 import { CustomExceptionCode } from 'src/common/enum/custom-exception-code.enum';
+import { GooglePayload } from 'src/common/decorator/google-payload.decorator';
+import { Response } from 'express';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -46,22 +48,23 @@ export class AuthController {
   }
 
   @ApiOperation({
-    summary: '웹 용 Google 로그인 요청',
-    description: '/auth/login/google/callback 으로 리다이렉트 되고, 회원 확인 후 accesstoken과 refreshtoken 반환',
+    summary: '웹 용 Google 로그인 요청 (SWAGGER에서 작동 X)',
+    description:
+      '프론트단 /callback?code={code}  로 받은 code를 api의 POST /auth/login/google/callback로 body에 담에 요청할것',
   })
-  @ApiGetResponse(TokenResDto)
   @Get('login/google')
   @UseGuards(AuthGuard('google'))
   async googleLogin() {}
 
-  // @ApiExcludeEndpoint()
   @ApiOperation({
     summary: 'Google oauth 로그인 이후 code를 사용한 회원 인증 TEST',
     description: 'Google 로그인 이후 리다이렉트 페이지, 회원 확인 이후 accesstoken과 refreshtoken 반환',
   })
+  @UseGuards(AuthGuard('google'))
+  @ApiPostResponse(TokenResDto)
   @Post('login/google/callback')
-  async googleLoginCallback(@Body() dto: WebGoogleLoginReqDto) {
-    await this.authService.googleLoginCallback(dto);
+  async googleLoginCallback(@GooglePayload() payload, @Body() dto: WebGoogleLoginReqDto) {
+    return await this.authService.googleLoginCallback(payload);
   }
 
   @ApiOperation({

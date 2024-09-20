@@ -12,7 +12,7 @@ import { JwtTokenType } from './enum/jwt-token-type.enum';
 import { User } from 'src/entity/user.entity';
 import { OAuth2Client } from 'google-auth-library';
 import { UserProvider } from 'src/user/enum/user-provider.enum';
-import { AppGuestLoginReqDto, WebGoogleLoginReqDto } from './dto/request.dto';
+import { AppGuestLoginReqDto } from './dto/request.dto';
 import { InvalidUserException } from 'src/common/exception/invalid.exception';
 
 @Injectable()
@@ -22,7 +22,7 @@ export class AuthService {
   private client: OAuth2Client;
   private readonly CLIENT_ID = this.configService.get('app.googleOauthClientId');
   private readonly CLIENT_SECRET = this.configService.get('app.googleOauthClientSecret');
-  private readonly CLIENT_REDIRECT = this.configService.get('app.googleLoginCallback');
+  private readonly CLIENT_REDIRECT = this.configService.get('app.googleOauthRedirectUri');
 
   constructor(
     @InjectRepository(Token) private readonly tokenRepository: Repository<Token>,
@@ -49,46 +49,18 @@ export class AuthService {
     }
   }
 
-  async googleLoginCallback(dto: WebGoogleLoginReqDto) {
-    try {
-      const { code } = dto;
-      console.log('🚀 ~ AuthService ~ googleLoginCallback ~ code:', code);
+  async googleLoginCallback(payload) {
+    const { id } = payload;
 
-      // 'code'를 사용하여 Google 서버에 액세스 토큰 요청
-      const { tokens } = await this.client.getToken({
-        code: code,
-        client_id: this.CLIENT_ID,
-        redirect_uri: this.CLIENT_REDIRECT,
-      });
+    const newAccessToken = this.generateAccessToken(id);
+    const newRefreshToken = this.generateRefreshToken(id);
 
-      const { id_token, access_token } = tokens;
-    } catch (e) {
-      console.log(e);
-    }
+    const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
+    await this.tokenRepository.save(refreshTokenEntity);
 
-    // // 'id_token'으로부터 사용자 정보 가져오기
-    // const ticket = await this.client.verifyIdToken({
-    //   idToken: id_token!,
-    //   audience: 'YOUR_GOOGLE_CLIENT_ID', // 클라이언트 ID 확인
-    // });
+    const resDto = new TokenResDto(newAccessToken, newRefreshToken);
 
-    // const payload = ticket.getPayload();
-    // console.log('🚀 ~ AuthService ~ googleLoginCallback ~ payload:', payload);
-    // if (!payload) {
-    //   throw new Error('Google 인증 실패');
-    // }
-
-    // const { id } = payload;
-
-    // const newAccessToken = this.generateAccessToken(id);
-    // const newRefreshToken = this.generateRefreshToken(id);
-
-    // const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
-    // await this.tokenRepository.save(refreshTokenEntity);
-
-    // const resDto = new TokenResDto(newAccessToken, newRefreshToken);
-
-    // return resDto;
+    return resDto;
   }
 
   async refresh(token: string): Promise<TokenResDto> {
@@ -156,7 +128,6 @@ export class AuthService {
         provider: UserProvider.GOOGLE,
         providerId: payload['sub'],
       };
-      console.log('🚀 ~ AuthService ~ appLogin ~ googleUser:', googleUser);
 
       let user = await this.userService.findOneByProviderId(UserProvider.GOOGLE, googleUser.providerId);
 
