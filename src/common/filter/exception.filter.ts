@@ -24,6 +24,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
     const { ip, method, originalUrl } = request;
     const logMessage = `${method} ${originalUrl} ${status}  ${JSON.stringify(errorResponseForLog)} - ${ip}`;
+    console.log(exception);
     this.logger.error(logMessage);
 
     response.status(status).json(errorResponse);
