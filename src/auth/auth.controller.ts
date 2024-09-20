@@ -3,7 +3,13 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { GooglePayload } from 'src/common/decorator/google-payload.decorator';
 import { ApiBody, ApiExcludeEndpoint, ApiExtraModels, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { LogoutReqDto, RefreshTokenReqDto, AppLoginReqDto, AppGuestLoginReqDto } from './dto/request.dto';
+import {
+  LogoutReqDto,
+  RefreshTokenReqDto,
+  AppLoginReqDto,
+  AppGuestLoginReqDto,
+  WebGoogleLoginReqDto,
+} from './dto/request.dto';
 import { AppGuestLoginResDto, TokenResDto } from './dto/response.dto';
 import { ApiGetResponse, ApiPostResponse } from 'src/common/decorator/swagger.decorator';
 import { ApiErrorResponse } from 'src/common/decorator/error-response.decorator';
@@ -49,15 +55,14 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleLogin() {}
 
-  @ApiExcludeEndpoint()
+  // @ApiExcludeEndpoint()
   @ApiOperation({
-    summary: 'Google 로그인 이후 리다이렉트 페이지',
+    summary: 'Google oauth 로그인 이후 code를 사용한 회원 인증 TEST',
     description: 'Google 로그인 이후 리다이렉트 페이지, 회원 확인 이후 accesstoken과 refreshtoken 반환',
   })
-  @Get('login/google/callback')
-  @UseGuards(AuthGuard('google'))
-  async googleLoginCallback(@GooglePayload() payload): Promise<TokenResDto> {
-    return await this.authService.loginCallback(payload);
+  @Post('login/google/callback')
+  async googleLoginCallback(@Body() dto: WebGoogleLoginReqDto) {
+    await this.authService.googleLoginCallback(dto);
   }
 
   @ApiOperation({

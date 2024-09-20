@@ -12,7 +12,7 @@ import { JwtTokenType } from './enum/jwt-token-type.enum';
 import { User } from 'src/entity/user.entity';
 import { OAuth2Client } from 'google-auth-library';
 import { UserProvider } from 'src/user/enum/user-provider.enum';
-import { AppGuestLoginReqDto } from './dto/request.dto';
+import { AppGuestLoginReqDto, WebGoogleLoginReqDto } from './dto/request.dto';
 import { InvalidUserException } from 'src/common/exception/invalid.exception';
 
 @Injectable()
@@ -21,8 +21,8 @@ export class AuthService {
   private readonly refreshTokenExpiresIn = '30d';
   private client: OAuth2Client;
   private readonly CLIENT_ID = this.configService.get('app.googleOauthClientId');
-  // private readonly CLIENT_ID = '502833253886-4k6q291k6cg8f7akujj7k360t4fabcra.apps.googleusercontent.com'; //내꺼
-  // '236075874307-3i9rfec1lujamn3dih8g36sv5fi4f1vt.apps.googleusercontent.com'//대경
+  private readonly CLIENT_SECRET = this.configService.get('app.googleOauthClientSecret');
+  private readonly CLIENT_REDIRECT = this.configService.get('app.googleLoginCallback');
 
   constructor(
     @InjectRepository(Token) private readonly tokenRepository: Repository<Token>,
@@ -30,7 +30,11 @@ export class AuthService {
     private jwtService: JwtService,
     private userService: UserService,
   ) {
-    this.client = new OAuth2Client(this.CLIENT_ID);
+    this.client = new OAuth2Client({
+      clientId: this.CLIENT_ID,
+      clientSecret: this.CLIENT_SECRET,
+      redirectUri: this.CLIENT_REDIRECT,
+    });
   }
 
   async validateGoogleUser(googleUser: GoogleUser): Promise<any> {
@@ -45,18 +49,42 @@ export class AuthService {
     }
   }
 
-  async loginCallback(payload: User): Promise<TokenResDto> {
-    const { id } = payload;
+  async googleLoginCallback(dto: WebGoogleLoginReqDto) {
+    try {
+      const { code } = dto;
+      console.log('🚀 ~ AuthService ~ googleLoginCallback ~ code:', code);
 
-    const newAccessToken = this.generateAccessToken(id);
-    const newRefreshToken = this.generateRefreshToken(id);
+      // 'code'를 사용하여 Google 서버에 액세스 토큰 요청
+      const { tokens } = await this.client.getToken(code);
 
-    const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
-    await this.tokenRepository.save(refreshTokenEntity);
+      const { id_token, access_token } = tokens;
+    } catch (e) {
+      console.log(e);
+    }
 
-    const resDto = new TokenResDto(newAccessToken, newRefreshToken);
+    // // 'id_token'으로부터 사용자 정보 가져오기
+    // const ticket = await this.client.verifyIdToken({
+    //   idToken: id_token!,
+    //   audience: 'YOUR_GOOGLE_CLIENT_ID', // 클라이언트 ID 확인
+    // });
 
-    return resDto;
+    // const payload = ticket.getPayload();
+    // console.log('🚀 ~ AuthService ~ googleLoginCallback ~ payload:', payload);
+    // if (!payload) {
+    //   throw new Error('Google 인증 실패');
+    // }
+
+    // const { id } = payload;
+
+    // const newAccessToken = this.generateAccessToken(id);
+    // const newRefreshToken = this.generateRefreshToken(id);
+
+    // const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
+    // await this.tokenRepository.save(refreshTokenEntity);
+
+    // const resDto = new TokenResDto(newAccessToken, newRefreshToken);
+
+    // return resDto;
   }
 
   async refresh(token: string): Promise<TokenResDto> {
