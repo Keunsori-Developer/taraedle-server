@@ -1,5 +1,5 @@
 import { Type, applyDecorators } from '@nestjs/common';
-import { ApiExtraModels, ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiExtraModels, ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
 
 export const ApiGetResponse = <TModel extends Type<any>>(model: TModel) => {
   return applyDecorators(
@@ -13,14 +13,15 @@ export const ApiGetResponse = <TModel extends Type<any>>(model: TModel) => {
   );
 };
 
-export const ApiPostResponse = <TModel extends Type<any>>(model: TModel) => {
+export const ApiPostResponse = <TModel extends Type<any>>(model: TModel, description?: string) => {
   return applyDecorators(
     ApiExtraModels(model),
-    ApiOkResponse({
+    ApiCreatedResponse({
       schema: {
         allOf: [{ $ref: getSchemaPath(model) }],
       },
       type: model,
+      description,
     }),
   );
 };
