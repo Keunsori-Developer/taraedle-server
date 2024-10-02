@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -9,13 +9,12 @@ import {
   AppGuestLoginReqDto,
   WebGoogleLoginReqDto,
 } from './dto/request.dto';
-import { AppGuestLoginResDto, TokenResDto } from './dto/response.dto';
+import { AppGoogleLoginResDto, AppGuestLoginResDto, TokenResDto, WebGoogleLoginResDto } from './dto/response.dto';
 import { ApiGetResponse, ApiPostResponse } from 'src/common/decorator/swagger.decorator';
 import { ApiErrorResponse } from 'src/common/decorator/error-response.decorator';
 import { CustomErrorDefinitions } from 'src/common/exception/error-definitions';
 import { CustomExceptionCode } from 'src/common/enum/custom-exception-code.enum';
 import { GooglePayload } from 'src/common/decorator/google-payload.decorator';
-import { Response } from 'express';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -27,10 +26,10 @@ export class AuthController {
     description: 'google에서 받은 jwt를 요청으로 보내고, 회원 확인 후 accesstoken과 refreshtoken 반환 ',
   })
   @ApiBody({ type: AppLoginReqDto })
-  @ApiPostResponse(TokenResDto)
+  @ApiPostResponse(AppGoogleLoginResDto)
   @Post('login/app/google')
   @HttpCode(HttpStatus.CREATED)
-  async appLogin(@Body() dto: AppLoginReqDto) {
+  async appLogin(@Body() dto: AppLoginReqDto): Promise<AppGoogleLoginResDto> {
     const { jwt: idToken } = dto;
     return await this.authService.appGoogleLogin(idToken);
   }
@@ -61,7 +60,7 @@ export class AuthController {
     description: 'Google 로그인 이후 리다이렉트 페이지, 회원 확인 이후 accesstoken과 refreshtoken 반환',
   })
   @UseGuards(AuthGuard('google'))
-  @ApiPostResponse(TokenResDto)
+  @ApiPostResponse(WebGoogleLoginResDto)
   @Post('login/google/callback')
   async googleLoginCallback(@GooglePayload() payload, @Body() dto: WebGoogleLoginReqDto) {
     return await this.authService.googleLoginCallback(payload);

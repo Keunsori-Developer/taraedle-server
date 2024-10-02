@@ -16,7 +16,13 @@ export class TokenResDto {
   refreshToken: string;
 }
 
-export class AppGuestLoginResDto extends TokenResDto {
+export class LoginResDto extends TokenResDto {}
+
+export class WebGoogleLoginResDto extends LoginResDto {}
+
+export class AppGoogleLoginResDto extends LoginResDto {}
+
+export class AppGuestLoginResDto extends LoginResDto {
   constructor(accessToken: string, refreshToken: string, isNewUser: boolean, providerId: string) {
     super(accessToken, refreshToken);
     this.isNewUser = isNewUser;

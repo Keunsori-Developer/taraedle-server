@@ -6,7 +6,7 @@ import { GoogleUser } from 'src/common/interface/provider-user.interface';
 import { Token } from 'src/entity/token.entity';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
-import { AppGuestLoginResDto, TokenResDto } from './dto/response.dto';
+import { AppGoogleLoginResDto, AppGuestLoginResDto, TokenResDto, WebGoogleLoginResDto } from './dto/response.dto';
 import { JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
 import { JwtTokenType } from './enum/jwt-token-type.enum';
 import { User } from 'src/entity/user.entity';
@@ -58,7 +58,7 @@ export class AuthService {
     const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
     await this.tokenRepository.save(refreshTokenEntity);
 
-    const resDto = new TokenResDto(newAccessToken, newRefreshToken);
+    const resDto = new WebGoogleLoginResDto(newAccessToken, newRefreshToken);
 
     return resDto;
   }
@@ -110,7 +110,7 @@ export class AuthService {
     await this.tokenRepository.delete({ refreshToken: token });
   }
 
-  async appGoogleLogin(idToken: string) {
+  async appGoogleLogin(idToken: string): Promise<AppGoogleLoginResDto> {
     try {
       const ticket = await this.client.verifyIdToken({
         idToken: idToken,
@@ -141,7 +141,7 @@ export class AuthService {
       const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
       await this.tokenRepository.save(refreshTokenEntity);
 
-      const resDto = new TokenResDto(newAccessToken, newRefreshToken);
+      const resDto = new AppGoogleLoginResDto(newAccessToken, newRefreshToken);
 
       return resDto;
     } catch (e) {
