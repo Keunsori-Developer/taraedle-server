@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { IsBoolean, IsString } from 'class-validator';
+import { UserResDto } from 'src/user/dto/response.dto';
 
 export class TokenResDto {
   constructor(accessToken: string, refreshToken: string) {
@@ -16,7 +17,12 @@ export class TokenResDto {
   refreshToken: string;
 }
 
-export class LoginResDto extends TokenResDto {}
+export class LoginResDto extends TokenResDto {
+  @ApiProperty()
+  @Expose()
+  @Type(() => UserResDto)
+  user: UserResDto;
+}
 
 export class WebGoogleLoginResDto extends LoginResDto {}
 

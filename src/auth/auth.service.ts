@@ -2,18 +2,20 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
+import { OAuth2Client } from 'google-auth-library';
+import { JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
+import { InvalidUserException } from 'src/common/exception/invalid.exception';
 import { GoogleUser } from 'src/common/interface/provider-user.interface';
 import { Token } from 'src/entity/token.entity';
+import { User } from 'src/entity/user.entity';
+import { UserResDto } from 'src/user/dto/response.dto';
+import { UserProvider } from 'src/user/enum/user-provider.enum';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
-import { AppGoogleLoginResDto, AppGuestLoginResDto, TokenResDto, WebGoogleLoginResDto } from './dto/response.dto';
-import { JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
-import { JwtTokenType } from './enum/jwt-token-type.enum';
-import { User } from 'src/entity/user.entity';
-import { OAuth2Client } from 'google-auth-library';
-import { UserProvider } from 'src/user/enum/user-provider.enum';
 import { AppGuestLoginReqDto } from './dto/request.dto';
-import { InvalidUserException } from 'src/common/exception/invalid.exception';
+import { AppGoogleLoginResDto, AppGuestLoginResDto, TokenResDto, WebGoogleLoginResDto } from './dto/response.dto';
+import { JwtTokenType } from './enum/jwt-token-type.enum';
 
 @Injectable()
 export class AuthService {
@@ -52,62 +54,25 @@ export class AuthService {
   async googleLoginCallback(payload) {
     const { id } = payload;
 
-    const newAccessToken = this.generateAccessToken(id);
-    const newRefreshToken = this.generateRefreshToken(id);
+    const user = await this.userService.fineOneById(id);
 
-    const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
-    await this.tokenRepository.save(refreshTokenEntity);
+    if (!user) {
+      throw new BadRequestException('Invalid User');
+    }
 
+    // 토큰 발급 및 저장
+    const { newAccessToken, newRefreshToken } = await this.generateBothTokens(user);
+    await this.tokenRepository.save(this.tokenRepository.create({ refreshToken: newRefreshToken }));
+
+    // response dto
+    const userDto = plainToInstance(UserResDto, user, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
     const resDto = new WebGoogleLoginResDto(newAccessToken, newRefreshToken);
+    resDto.user = userDto;
 
     return resDto;
-  }
-
-  async refresh(token: string): Promise<TokenResDto> {
-    const prevRefreshToken = await this.tokenRepository.findOne({ where: { refreshToken: token } });
-    if (!prevRefreshToken) {
-      throw new BadRequestException('Invalid refreshtoken');
-    }
-
-    const { id } = this.jwtService.verify(token);
-
-    const user = await this.userService.fineOneById(id);
-
-    if (!user) {
-      throw new BadRequestException('Invalid User');
-    }
-
-    const newAccessToken = this.generateAccessToken(id);
-    const newRefreshToken = this.generateRefreshToken(id);
-
-    prevRefreshToken.refreshToken = newRefreshToken;
-    await this.tokenRepository.save(prevRefreshToken);
-
-    const resDto = new TokenResDto(newAccessToken, newRefreshToken);
-
-    return resDto;
-  }
-
-  async refreshTEST(): Promise<TokenResDto> {
-    const id = '1';
-    const user = await this.userService.fineOneById(id);
-
-    if (!user) {
-      throw new BadRequestException('Invalid User');
-    }
-
-    const newAccessToken = this.generateAccessToken(id);
-    const newRefreshToken = this.generateRefreshToken(id);
-
-    await this.tokenRepository.save({ refreshToken: newRefreshToken });
-
-    const resDto = new TokenResDto(newAccessToken, newRefreshToken);
-
-    return resDto;
-  }
-
-  async logout(token: string) {
-    await this.tokenRepository.delete({ refreshToken: token });
   }
 
   async appGoogleLogin(idToken: string): Promise<AppGoogleLoginResDto> {
@@ -135,18 +100,20 @@ export class AuthService {
         user = await this.userService.createGoogleUser(googleUser);
       }
 
-      const newAccessToken = this.generateAccessToken(user.id);
-      const newRefreshToken = this.generateRefreshToken(user.id);
+      const { newAccessToken, newRefreshToken } = await this.generateBothTokens(user);
+      await this.tokenRepository.save(this.tokenRepository.create({ refreshToken: newRefreshToken }));
 
-      const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
-      await this.tokenRepository.save(refreshTokenEntity);
-
+      // response dto
+      const userDto = plainToInstance(UserResDto, user, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      });
       const resDto = new AppGoogleLoginResDto(newAccessToken, newRefreshToken);
+      resDto.user = userDto;
 
       return resDto;
     } catch (e) {
-      console.log(e);
-      throw new BadRequestException('Invalid Token');
+      throw new BadRequestException(e);
     }
   }
 
@@ -169,14 +136,44 @@ export class AuthService {
       user = await this.userService.createGuestUser();
     }
 
-    const newAccessToken = this.generateAccessToken(user.id);
-    const newRefreshToken = this.generateRefreshToken(user.id);
+    const { newAccessToken, newRefreshToken } = await this.generateBothTokens(user);
+    await this.tokenRepository.save(this.tokenRepository.create({ refreshToken: newRefreshToken }));
 
-    const refreshTokenEntity = this.tokenRepository.create({ refreshToken: newRefreshToken });
-    await this.tokenRepository.save(refreshTokenEntity);
-
+    // response dto
+    const userDto = plainToInstance(UserResDto, user, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
     const resDto = new AppGuestLoginResDto(newAccessToken, newRefreshToken, isNewUser, user.providerId);
+    resDto.user = userDto;
+
     return resDto;
+  }
+
+  async refresh(token: string): Promise<TokenResDto> {
+    const prevRefreshToken = await this.tokenRepository.findOne({ where: { refreshToken: token } });
+    if (!prevRefreshToken) {
+      throw new BadRequestException('Invalid refreshtoken');
+    }
+
+    const { id } = this.jwtService.verify(token);
+
+    const user = await this.userService.fineOneById(id);
+
+    if (!user) {
+      throw new BadRequestException('Invalid User');
+    }
+
+    const { newAccessToken, newRefreshToken } = await this.generateBothTokens(user);
+    await this.tokenRepository.save(this.tokenRepository.create({ refreshToken: newRefreshToken }));
+
+    const resDto = new TokenResDto(newAccessToken, newRefreshToken);
+
+    return resDto;
+  }
+
+  async logout(token: string) {
+    await this.tokenRepository.delete({ refreshToken: token });
   }
 
   private generateAccessToken(id: string) {
@@ -191,5 +188,12 @@ export class AuthService {
     const options = { expiresIn: this.refreshTokenExpiresIn, secret: this.configService.get('app.jwtSecret') };
 
     return this.jwtService.sign(payload, options);
+  }
+
+  private async generateBothTokens(user: User) {
+    const newAccessToken = this.generateAccessToken(user.id);
+    const newRefreshToken = this.generateRefreshToken(user.id);
+
+    return { newAccessToken, newRefreshToken };
   }
 }
