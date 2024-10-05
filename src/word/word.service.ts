@@ -1,12 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
 import { FINALS, INITIALS, MEDIALS } from 'src/common/constant/hangul.constant';
+import { InvalidWordException } from 'src/common/exception/invalid.exception';
+import { SolvedWord } from 'src/entity/solved_word.entity';
+import { User } from 'src/entity/user.entity';
 import { Word } from 'src/entity/word.entity';
 import { DeepPartial, Repository } from 'typeorm';
 import { GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
-import { User } from 'src/entity/user.entity';
-import { SolvedWord } from 'src/entity/solved_word.entity';
-import { InvalidWordException } from 'src/common/exception/invalid.exception';
+import { WordResDto } from './dto/response.dto';
 
 @Injectable()
 export class WordService {
@@ -14,7 +16,7 @@ export class WordService {
     @InjectRepository(Word) private wordRepository: Repository<Word>,
     @InjectRepository(SolvedWord) private solvedWordRepository: Repository<SolvedWord>,
   ) {}
-  async getRandomWord(dto: GetWordReqDto) {
+  async getRandomWord(dto: GetWordReqDto): Promise<WordResDto> {
     const randomWordQueryBuilder = this.wordRepository.createQueryBuilder().select('value');
 
     if (dto.length) {
@@ -41,7 +43,12 @@ export class WordService {
       throw new BadRequestException('해당하는 단어가 없습니다');
     }
 
-    return randomWord;
+    const resDto = plainToInstance(WordResDto, randomWord, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+
+    return resDto;
   }
 
   async addWordsIntoDatabase(words: string) {

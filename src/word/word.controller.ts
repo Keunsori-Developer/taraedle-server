@@ -1,13 +1,14 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-
-import { WordService } from './word.service';
-import { AddWordReqDto, GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
-import { Jwt, JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponse } from 'src/common/decorator/error-response.decorator';
-import { CustomErrorDefinitions } from 'src/common/exception/error-definitions';
+import { Jwt, JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
+import { ApiGetResponse } from 'src/common/decorator/swagger.decorator';
 import { CustomExceptionCode } from 'src/common/enum/custom-exception-code.enum';
+import { CustomErrorDefinitions } from 'src/common/exception/error-definitions';
+import { AddWordReqDto, SolveWordReqDto, GetWordReqDto as WordReqDto } from './dto/request.dto';
+import { WordResDto } from './dto/response.dto';
+import { WordService } from './word.service';
 
 @ApiTags('Word')
 @Controller('word')
@@ -15,23 +16,24 @@ export class WordController {
   constructor(private wordService: WordService) {}
 
   @ApiOperation({ summary: '랜덤한 단어 한개 반환' })
-  @ApiResponse({ type: GetWordReqDto })
+  @ApiGetResponse(WordResDto)
   @Get()
   @HttpCode(HttpStatus.OK)
-  async getWord(@Query() dto: GetWordReqDto) {
+  async getWord(@Query() dto: WordReqDto) {
     return await this.wordService.getRandomWord(dto);
   }
 
   @ApiOperation({ summary: '랜덤한 단어 한개 반환, jwt 인증 필요' })
   @ApiBearerAuth()
-  @Get('authtest')
+  @ApiGetResponse(WordResDto)
   @UseGuards(AuthGuard('jwt'))
+  @Get('authtest')
   @HttpCode(HttpStatus.OK)
-  async getWordAuth(@Query() dto: GetWordReqDto) {
+  async getWordAuth(@Query() dto: WordReqDto) {
     return await this.wordService.getRandomWord(dto);
   }
 
-  @ApiOperation({})
+  @ApiOperation({ summary: '단어 정보 확인' })
   @ApiParam({ name: 'word' })
   @Get('check/:word')
   @HttpCode(HttpStatus.OK)

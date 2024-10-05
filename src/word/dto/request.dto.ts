@@ -10,26 +10,26 @@ export class AddWordReqDto {
 }
 
 export class GetWordReqDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: '단어의 길이' })
   @Type(() => Number)
   @IsOptional()
   @IsNumber()
   @Min(2)
   length?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: '자모음의 총 개수' })
   @Type(() => Number)
   @IsOptional()
   @IsNumber()
   @Min(4)
   count?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: '복합모음의 유무' })
   @IsOptional()
   @ToBoolean()
   complexVowel?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: '복합자음의 유무' })
   @IsOptional()
   @ToBoolean()
   complexConsonant?: boolean;
