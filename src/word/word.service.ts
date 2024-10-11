@@ -17,7 +17,7 @@ export class WordService {
     @InjectRepository(SolvedWord) private solvedWordRepository: Repository<SolvedWord>,
   ) {}
   async getRandomWord(dto: GetWordReqDto): Promise<WordResDto> {
-    const randomWordQueryBuilder = this.wordRepository.createQueryBuilder().select('value');
+    const randomWordQueryBuilder = this.wordRepository.createQueryBuilder();
 
     if (dto.length) {
       randomWordQueryBuilder.andWhere('length = :length', { length: dto.length });
@@ -37,7 +37,9 @@ export class WordService {
       });
     }
 
-    const randomWord = await randomWordQueryBuilder.orderBy('RANDOM()').limit(1).getRawOne();
+    randomWordQueryBuilder.orderBy('RANDOM()').limit(1);
+
+    const randomWord = await randomWordQueryBuilder.getOne();
 
     if (!randomWord) {
       throw new BadRequestException('해당하는 단어가 없습니다');
