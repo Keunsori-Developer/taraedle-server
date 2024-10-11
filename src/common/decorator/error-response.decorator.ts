@@ -13,7 +13,7 @@ export interface ApiErrorResponseOption {
   /**
    * Custom Exception Code
    */
-  code?: number;
+  code?: string;
 }
 
 export const ApiErrorResponse = (errorResponseOptions: ApiErrorResponseOption[]) => {

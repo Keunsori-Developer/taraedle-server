@@ -9,6 +9,7 @@ import { Word } from 'src/entity/word.entity';
 import { DeepPartial, Repository } from 'typeorm';
 import { GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
 import { WordResDto } from './dto/response.dto';
+import { NotFoundWordException } from 'src/common/exception/notfound.exception';
 
 @Injectable()
 export class WordService {
@@ -42,7 +43,7 @@ export class WordService {
     const randomWord = await randomWordQueryBuilder.getOne();
 
     if (!randomWord) {
-      throw new BadRequestException('해당하는 단어가 없습니다');
+      throw new NotFoundWordException();
     }
 
     const resDto = plainToInstance(WordResDto, randomWord, {
@@ -184,105 +185,6 @@ export class WordService {
     }
 
     return result;
-  }
-
-  private decomposeConstants(arr: string[]) {
-    let complexConsonantCount = 0;
-    let complexVowelCount = 0;
-
-    const decomposed = arr.flatMap((char) => {
-      switch (char) {
-        case 'ㄲ':
-          complexConsonantCount++;
-          return ['ㄱ', 'ㄱ'];
-        case 'ㄳ':
-          complexConsonantCount++;
-          return ['ㄱ', 'ㅅ'];
-        case 'ㄵ':
-          complexConsonantCount++;
-          return ['ㄴ', 'ㅈ'];
-        case 'ㄶ':
-          complexConsonantCount++;
-          return ['ㄴ', 'ㅎ'];
-        case 'ㄸ':
-          complexConsonantCount++;
-          return ['ㄷ', 'ㄷ'];
-        case 'ㄺ':
-          complexConsonantCount++;
-          return ['ㄹ', 'ㄱ'];
-        case 'ㄻ':
-          complexConsonantCount++;
-          return ['ㄹ', 'ㅁ'];
-        case 'ㄼ':
-          complexConsonantCount++;
-          return ['ㄹ', 'ㅂ'];
-        case 'ㄽ':
-          complexConsonantCount++;
-          return ['ㄹ', 'ㅅ'];
-        case 'ㄾ':
-          complexConsonantCount++;
-          return ['ㄹ', 'ㅌ'];
-        case 'ㄿ':
-          complexConsonantCount++;
-          return ['ㄹ', 'ㅍ'];
-        case 'ㅀ':
-          complexConsonantCount++;
-          return ['ㄹ', 'ㅎ'];
-        case 'ㅃ':
-          complexConsonantCount++;
-          return ['ㅂ', 'ㅂ'];
-        case 'ㅄ':
-          complexConsonantCount++;
-          return ['ㅂ', 'ㅅ'];
-        case 'ㅆ':
-          complexConsonantCount++;
-          return ['ㅅ', 'ㅅ'];
-        case 'ㅉ':
-          complexConsonantCount++;
-          return ['ㅈ', 'ㅈ'];
-        case 'ㅐ':
-          complexVowelCount++;
-          return ['ㅏ', 'ㅣ'];
-        case 'ㅒ':
-          complexVowelCount++;
-          return ['ㅑ', 'ㅣ'];
-        case 'ㅔ':
-          complexVowelCount++;
-          return ['ㅓ', 'ㅣ'];
-        case 'ㅖ':
-          complexVowelCount++;
-          return ['ㅕ', 'ㅣ'];
-        case 'ㅘ':
-          complexVowelCount++;
-          return ['ㅗ', 'ㅏ'];
-        case 'ㅙ':
-          complexVowelCount++;
-          return ['ㅗ', 'ㅏ', 'ㅣ'];
-        case 'ㅚ':
-          complexVowelCount++;
-          return ['ㅗ', 'ㅣ'];
-        case 'ㅝ':
-          complexVowelCount++;
-          return ['ㅜ', 'ㅓ'];
-        case 'ㅞ':
-          complexVowelCount++;
-          return ['ㅜ', 'ㅓ', 'ㅣ'];
-        case 'ㅟ':
-          complexVowelCount++;
-          return ['ㅜ', 'ㅣ'];
-        case 'ㅢ':
-          complexVowelCount++;
-          return ['ㅡ', 'ㅣ'];
-        default:
-          return [char];
-      }
-    });
-
-    return {
-      arr: decomposed,
-      complexConsonantCount,
-      complexVowelCount,
-    };
   }
 
   async solveWord(userId: User['id'], dto: SolveWordReqDto) {

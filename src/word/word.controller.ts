@@ -17,6 +17,7 @@ export class WordController {
 
   @ApiOperation({ summary: '랜덤한 단어 한개 반환' })
   @ApiGetResponse(WordResDto)
+  @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.NOTFOUND_WORD]])
   @Get()
   @HttpCode(HttpStatus.OK)
   async getWord(@Query() dto: WordReqDto) {
@@ -26,6 +27,7 @@ export class WordController {
   @ApiOperation({ summary: '랜덤한 단어 한개 반환, jwt 인증 필요' })
   @ApiBearerAuth()
   @ApiGetResponse(WordResDto)
+  @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.NOTFOUND_WORD]])
   @UseGuards(AuthGuard('jwt'))
   @Get('authtest')
   @HttpCode(HttpStatus.OK)

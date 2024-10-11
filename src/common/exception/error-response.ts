@@ -3,11 +3,11 @@ import { Expose } from 'class-transformer';
 
 export class ErrorResponse {
   @ApiProperty({ example: 10000, type: 'number' })
-  readonly errorCode: number;
+  readonly errorCode: string;
 
   @ApiProperty({ example: '' })
   readonly message: any;
-  constructor(errorCode?: number, message?: any) {
+  constructor(errorCode?: string, message?: any) {
     this.errorCode = errorCode;
     this.message = message;
   }
@@ -20,7 +20,7 @@ export class ErrorResDto {
 
   @ApiPropertyOptional({ type: String })
   @Expose()
-  errorCode?: number;
+  errorCode?: string;
 
   @ApiPropertyOptional({ type: String })
   @Expose()
@@ -30,7 +30,7 @@ export class ErrorResDto {
   @Expose()
   error?: any;
 
-  constructor(statusCode: number, errorCode?: number, message?: string, error?: any) {
+  constructor(statusCode: number, errorCode?: string, message?: string, error?: any) {
     this.statusCode = statusCode;
     this.message = message;
     this.errorCode = errorCode;

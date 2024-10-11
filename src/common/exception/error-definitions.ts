@@ -1,6 +1,7 @@
 import { ApiErrorResponseOption } from '../decorator/error-response.decorator';
 import { CustomExceptionCode } from '../enum/custom-exception-code.enum';
 import { InvalidUserException, InvalidWordException } from './invalid.exception';
+import { NotFoundWordException } from './notfound.exception';
 import { ExpiredJwtException, InvalidJwtException } from './token.exception';
 
 export const CustomErrorDefinitions: Record<CustomExceptionCode, ApiErrorResponseOption> = {
@@ -28,5 +29,11 @@ export const CustomErrorDefinitions: Record<CustomExceptionCode, ApiErrorRespons
     exampleTitle: CustomExceptionCode[CustomExceptionCode.INVALID_WORD],
     exampleDescription: `유효하지 않은 단어 (${CustomExceptionCode.INVALID_WORD})`,
     code: CustomExceptionCode.INVALID_WORD,
+  },
+  [CustomExceptionCode.NOTFOUND_WORD]: {
+    model: NotFoundWordException,
+    exampleTitle: CustomExceptionCode[CustomExceptionCode.NOTFOUND_WORD],
+    exampleDescription: `해당 요청으로 단어가 존재하지 않음 (${CustomExceptionCode.NOTFOUND_WORD})`,
+    code: CustomExceptionCode.NOTFOUND_WORD,
   },
 };
