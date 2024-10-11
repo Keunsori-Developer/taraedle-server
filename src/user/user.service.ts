@@ -7,6 +7,7 @@ import { UserProvider } from './enum/user-provider.enum';
 import { plainToInstance } from 'class-transformer';
 import { UserResDto } from './dto/response.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { InvalidUserException } from 'src/common/exception/invalid.exception';
 
 @Injectable()
 export class UserService {
@@ -47,7 +48,7 @@ export class UserService {
   async getMyUserData(userId: User['id']) {
     const user: User = await this.fineOneById(userId);
     if (!user) {
-      throw new BadRequestException('Invalid User');
+      throw new InvalidUserException();
     }
 
     const resDto = plainToInstance(UserResDto, user, {
