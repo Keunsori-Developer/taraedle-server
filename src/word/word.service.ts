@@ -1,15 +1,16 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { FINALS, INITIALS, MEDIALS } from 'src/common/constant/hangul.constant';
-import { InvalidWordException } from 'src/common/exception/invalid.exception';
+import { InvalidUserException, InvalidWordException } from 'src/common/exception/invalid.exception';
+import { NotFoundWordException } from 'src/common/exception/notfound.exception';
 import { SolvedWord } from 'src/entity/solved_word.entity';
 import { User } from 'src/entity/user.entity';
 import { Word } from 'src/entity/word.entity';
+import { UserSolveResDto } from 'src/user/dto/response.dto';
 import { DeepPartial, Repository } from 'typeorm';
 import { GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
 import { WordResDto } from './dto/response.dto';
-import { NotFoundWordException } from 'src/common/exception/notfound.exception';
 
 @Injectable()
 export class WordService {
@@ -198,5 +199,29 @@ export class WordService {
     await this.solvedWordRepository.save(
       this.solvedWordRepository.create({ attempts, isSolved, word: { id: wordId }, user: { id: userId } }),
     );
+  }
+
+  async getUserSolveData(user: User) {
+    if (!user) {
+      throw new InvalidUserException();
+    }
+    const solveCount = (await this.solvedWordRepository.count({ where: { user: { id: user.id } } })) ?? 0;
+    const lastSolveRaw = await this.solvedWordRepository.findOne({
+      where: { user: { id: user.id }, isSolved: true },
+      order: { id: 'desc' },
+    });
+
+    const lastSolve = lastSolveRaw.createdAt.toLocaleString();
+
+    const solveResDto = plainToInstance(
+      UserSolveResDto,
+      { solveCount, lastSolve },
+      {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      },
+    );
+
+    return solveResDto;
   }
 }

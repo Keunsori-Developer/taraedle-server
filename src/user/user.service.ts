@@ -1,17 +1,21 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
+import { InvalidUserException } from 'src/common/exception/invalid.exception';
 import { GoogleUser, GuestUser } from 'src/common/interface/provider-user.interface';
 import { User } from 'src/entity/user.entity';
+import { WordService } from 'src/word/word.service';
 import { Repository } from 'typeorm';
-import { UserProvider } from './enum/user-provider.enum';
-import { plainToInstance } from 'class-transformer';
-import { UserResDto } from './dto/response.dto';
 import { v4 as uuidv4 } from 'uuid';
-import { InvalidUserException } from 'src/common/exception/invalid.exception';
+import { UserDetailResDto } from './dto/response.dto';
+import { UserProvider } from './enum/user-provider.enum';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectRepository(User) private readonly userRepository: Repository<User>) {}
+  constructor(
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    private wordService: WordService,
+  ) {}
 
   async createGoogleUser(user: GoogleUser) {
     const { name, providerId, email } = user;
@@ -51,10 +55,13 @@ export class UserService {
       throw new InvalidUserException();
     }
 
-    const resDto = plainToInstance(UserResDto, user, {
+    const resDto = plainToInstance(UserDetailResDto, user, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
+
+    const solveResDto = await this.wordService.getUserSolveData(user);
+    resDto.solveData = solveResDto;
 
     return resDto;
   }
