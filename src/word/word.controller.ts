@@ -47,8 +47,8 @@ export class WordController {
   @ApiBody({ type: AddWordReqDto })
   @Post('')
   @HttpCode(HttpStatus.OK)
-  addWords(@Body() dto: AddWordReqDto) {
-    return this.wordService.addWordsIntoDatabase(dto.words);
+  async addWords(@Body() dto: AddWordReqDto) {
+    return await this.wordService.addWordsIntoDatabase(dto.words);
   }
 
   @ApiOperation({ summary: '풀이 결과 저장' })
@@ -58,7 +58,7 @@ export class WordController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
-  solveWord(@Jwt() JwtPayload: JwtPayLoad, @Body() dto: SolveWordReqDto) {
-    return this.wordService.solveWord(JwtPayload.id, dto);
+  async solveWord(@Jwt() JwtPayload: JwtPayLoad, @Body() dto: SolveWordReqDto) {
+    return await this.wordService.solveWord(JwtPayload.id, dto);
   }
 }
