@@ -29,11 +29,11 @@ export class WordService {
       randomWordQueryBuilder.andWhere('count = :count', { count: dto.count });
     }
 
-    if (dto.complexVowel) {
+    if (dto.complexVowel !== undefined) {
       randomWordQueryBuilder.andWhere('has_complex_vowel = :complexVowel', { complexVowel: dto.complexVowel });
     }
 
-    if (dto.complexConsonant) {
+    if (dto.complexConsonant !== undefined) {
       randomWordQueryBuilder.andWhere('has_complex_consonant = :complexConsonant', {
         complexConsonant: dto.complexConsonant,
       });
