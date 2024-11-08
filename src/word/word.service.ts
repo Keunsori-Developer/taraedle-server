@@ -11,7 +11,12 @@ import { UserSolveResDto } from 'src/user/dto/response.dto';
 import { DeepPartial, Repository } from 'typeorm';
 import { GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
 import { WordResDto } from './dto/response.dto';
-
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone.js';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Seoul');
 @Injectable()
 export class WordService {
   constructor(
@@ -223,5 +228,43 @@ export class WordService {
     );
 
     return solveResDto;
+  }
+
+  async getCurrentSolveStream() {
+    const userId = '1';
+    const solvedWords = await this.solvedWordRepository.find({
+      select: { createdAt: true },
+      where: { user: { id: userId }, isSolved: true },
+      order: { createdAt: 'DESC' }, // 날짜 순서대로 정렬
+    });
+
+    const solvedWordsInKoreaTime = solvedWords.map((word) => ({
+      ...word,
+      createdAt: dayjs(word.createdAt).tz(),
+    }));
+    console.log('🚀 ~ WordService ~ solvedWordsInKoreaTime ~ solvedWordsInKoreaTime:', solvedWordsInKoreaTime);
+
+    const today = dayjs().startOf('day'); // 오늘 날짜 (00:00 기준)
+    let streak = 0; // 연속된 일수를 카운트할 변수
+
+    for (let i = 0; i < solvedWordsInKoreaTime.length; i++) {
+      const solvedDate = dayjs(solvedWordsInKoreaTime[i].createdAt).startOf('day');
+
+      // 오늘 날짜와 같으면 카운트를 시작하고 넘어감
+      if (streak === 0 && solvedDate.isSame(today)) {
+        streak += 1;
+        continue;
+      }
+
+      // 이전 문제와 날짜 차이를 확인하여 연속 여부 판단
+      const previousDate = today.subtract(streak, 'day'); // 마지막 연속 일수에서 -1일씩 뺀 날짜
+
+      if (solvedDate.isSame(previousDate)) {
+        streak += 1; // 연속되면 카운트 증가
+      } else {
+        break; // 연속이 끊기면 종료
+      }
+    }
+    console.log('🚀 ~ WordService ~ getCurrentSolveStream ~ streak:', streak);
   }
 }

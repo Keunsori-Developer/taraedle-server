@@ -21,6 +21,6 @@ export class SolvedWord {
   @Column({ name: 'is_solved', type: 'boolean' })
   isSolved: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 }
