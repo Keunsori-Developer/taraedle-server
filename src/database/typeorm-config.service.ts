@@ -18,7 +18,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
       autoLoadEntities: true,
       synchronize: true,
       dropSchema: false,
-      logging: true,
+      logging: false,
     };
   }
 }

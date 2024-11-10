@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone.js';
+import utc from 'dayjs/plugin/utc';
 import { FINALS, INITIALS, MEDIALS } from 'src/common/constant/hangul.constant';
 import { InvalidUserException, InvalidWordException } from 'src/common/exception/invalid.exception';
 import { NotFoundWordException } from 'src/common/exception/notfound.exception';
@@ -11,9 +14,6 @@ import { UserSolveResDto } from 'src/user/dto/response.dto';
 import { DeepPartial, Repository } from 'typeorm';
 import { GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
 import { WordResDto } from './dto/response.dto';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone.js';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault('Asia/Seoul');
@@ -216,11 +216,13 @@ export class WordService {
       order: { id: 'desc' },
     });
 
-    const lastSolve = lastSolveRaw.createdAt.toLocaleString();
+    const solveStreak = await this.getCurrentSolveStreak(user.id);
+
+    const lastSolve = lastSolveRaw?.createdAt.toLocaleString() ?? null;
 
     const solveResDto = plainToInstance(
       UserSolveResDto,
-      { solveCount, lastSolve },
+      { solveCount, lastSolve, solveStreak },
       {
         excludeExtraneousValues: true,
         enableImplicitConversion: true,
@@ -230,8 +232,7 @@ export class WordService {
     return solveResDto;
   }
 
-  async getCurrentSolveStream() {
-    const userId = '1';
+  async getCurrentSolveStreak(userId: User['id']) {
     const solvedWords = await this.solvedWordRepository.find({
       select: { createdAt: true },
       where: { user: { id: userId }, isSolved: true },
@@ -240,31 +241,35 @@ export class WordService {
 
     const solvedWordsInKoreaTime = solvedWords.map((word) => ({
       ...word,
-      createdAt: dayjs(word.createdAt).tz(),
+      createdAt: dayjs(word.createdAt).tz().startOf('day'),
     }));
-    console.log('🚀 ~ WordService ~ solvedWordsInKoreaTime ~ solvedWordsInKoreaTime:', solvedWordsInKoreaTime);
 
-    const today = dayjs().startOf('day'); // 오늘 날짜 (00:00 기준)
-    let streak = 0; // 연속된 일수를 카운트할 변수
+    const solveDateArray = [...new Set(solvedWordsInKoreaTime.map((word) => word.createdAt))];
 
-    for (let i = 0; i < solvedWordsInKoreaTime.length; i++) {
-      const solvedDate = dayjs(solvedWordsInKoreaTime[i].createdAt).startOf('day');
+    if (solveDateArray.length === 0) {
+      return 0;
+    }
+    // 처음은 오늘부터 확인
+    let targetDay = dayjs().startOf('day');
+    let streak = 0;
 
-      // 오늘 날짜와 같으면 카운트를 시작하고 넘어감
-      if (streak === 0 && solvedDate.isSame(today)) {
+    //오늘 풀었으면 1 추가
+    if (dayjs(solveDateArray[0]).isSame(targetDay)) {
+      streak = 1;
+    }
+
+    // 어제부터 이어서 확인
+    targetDay = targetDay.subtract(1, 'day');
+
+    for (let i = 0; i < solveDateArray.length; i++) {
+      const solvedDate = dayjs(solveDateArray[i]);
+      if (solvedDate.isSame(targetDay)) {
+        targetDay = targetDay.subtract(1, 'day');
         streak += 1;
-        continue;
-      }
-
-      // 이전 문제와 날짜 차이를 확인하여 연속 여부 판단
-      const previousDate = today.subtract(streak, 'day'); // 마지막 연속 일수에서 -1일씩 뺀 날짜
-
-      if (solvedDate.isSame(previousDate)) {
-        streak += 1; // 연속되면 카운트 증가
       } else {
-        break; // 연속이 끊기면 종료
+        break;
       }
     }
-    console.log('🚀 ~ WordService ~ getCurrentSolveStream ~ streak:', streak);
+    return streak;
   }
 }

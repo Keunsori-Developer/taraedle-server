@@ -55,17 +55,10 @@ export class WordController {
   @ApiBody({ type: SolveWordReqDto })
   @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.INVALID_WORD]])
   @Post('solve')
-  // @ApiBearerAuth()
-  // @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
-  async solveWord(@Body() dto: SolveWordReqDto) {
-    return await this.wordService.solveWord('1', dto);
-  }
-
-  @ApiOperation({ summary: 'test' })
-  @Get('test')
-  @HttpCode(HttpStatus.OK)
-  async test() {
-    return await this.wordService.getCurrentSolveStream();
+  async solveWord(@Jwt() JwtPayload: JwtPayLoad, @Body() dto: SolveWordReqDto) {
+    return await this.wordService.solveWord(JwtPayload.id, dto);
   }
 }

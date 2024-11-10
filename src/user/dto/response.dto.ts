@@ -23,6 +23,10 @@ export class UserSolveResDto {
   @ApiProperty({ example: '2024. 8. 1. 오전 11:00:00' })
   @Expose()
   lastSolve: string;
+
+  @ApiProperty({ example: 1 })
+  @Expose()
+  solveStreak: number;
 }
 
 export class UserDetailResDto extends UserResDto {
