@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponse } from 'src/common/decorator/error-response.decorator';
 import { Jwt, JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
 import { ApiGetResponse } from 'src/common/decorator/swagger.decorator';
@@ -14,6 +14,14 @@ import { WordService } from './word.service';
 @Controller('word')
 export class WordController {
   constructor(private wordService: WordService) {}
+
+  @ApiOperation({ summary: 'test' })
+  @ApiQuery({ name: 'str' })
+  @Get('test')
+  @HttpCode(HttpStatus.OK)
+  async test(@Query('str') str: string) {
+    return await this.wordService.test(str);
+  }
 
   @ApiOperation({ summary: '랜덤한 단어 한개 반환' })
   @ApiGetResponse(WordResDto)

@@ -17,6 +17,10 @@ class EnvironmentVariablesValidator {
 
   @IsString()
   @IsNotEmpty()
+  KRDICT_API_KEY: string;
+
+  @IsString()
+  @IsNotEmpty()
   JWT_SECRET: string;
 }
 
@@ -27,6 +31,7 @@ export default registerAs('app', () => {
     googleOauthClientId: process.env.GOOGLE_OAUTH_CLIENT_ID,
     googleOauthClientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
     googleOauthRedirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI,
+    krdictApiKey: process.env.KRDICT_API_KEY,
     jwtSecret: process.env.JWT_SECRET,
   };
 });

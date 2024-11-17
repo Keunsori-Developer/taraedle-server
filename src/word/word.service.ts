@@ -14,6 +14,11 @@ import { UserSolveResDto } from 'src/user/dto/response.dto';
 import { DeepPartial, Repository } from 'typeorm';
 import { GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
 import { WordResDto } from './dto/response.dto';
+import axios from 'axios';
+import * as xml2js from 'xml2js';
+import { ConfigService } from '@nestjs/config';
+import { mapJsonToStructuredData, parseXmlToJson } from './mapper/word.mapper';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault('Asia/Seoul');
@@ -22,6 +27,7 @@ export class WordService {
   constructor(
     @InjectRepository(Word) private wordRepository: Repository<Word>,
     @InjectRepository(SolvedWord) private solvedWordRepository: Repository<SolvedWord>,
+    private readonly configService: ConfigService,
   ) {}
   async getRandomWord(dto: GetWordReqDto): Promise<WordResDto> {
     const randomWordQueryBuilder = this.wordRepository.createQueryBuilder();
@@ -271,5 +277,29 @@ export class WordService {
       }
     }
     return streak;
+  }
+
+  async test(str: string) {
+    console.log(str);
+    const url = 'https://krdict.korean.go.kr/api/search';
+    const params = {
+      key: this.configService.get('app.krdictApiKey'),
+      q: str,
+      advanced: 'y',
+      part: 'word',
+      method: 'exact',
+    };
+
+    try {
+      const response = await axios.get(url, { params });
+      const xmlData = response.data;
+
+      const jsonData = await parseXmlToJson(xmlData);
+      const structuredData = mapJsonToStructuredData(jsonData);
+
+      return structuredData;
+    } catch (error) {
+      console.error('Error fetching or processing data:', error.message);
+    }
   }
 }
