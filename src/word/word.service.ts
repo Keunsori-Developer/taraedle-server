@@ -58,6 +58,7 @@ export class WordService {
       throw new NotFoundWordException();
     }
 
+    //TODO: null일때 리턴 이후에 db update 실행
     if (!randomWord.definitions || randomWord.length == 0) {
       randomWord.definitions = await this.getWordDefinitionsFromKrDictApi(randomWord.value);
     }
@@ -285,7 +286,6 @@ export class WordService {
   }
 
   async getWordDefinitionsFromKrDictApi(str: string) {
-    console.log(str);
     const url = 'https://krdict.korean.go.kr/api/search';
     const params = {
       key: this.configService.get('app.krdictApiKey'),
