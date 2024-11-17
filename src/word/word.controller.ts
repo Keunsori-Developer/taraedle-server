@@ -20,7 +20,7 @@ export class WordController {
   @Get('test')
   @HttpCode(HttpStatus.OK)
   async test(@Query('str') str: string) {
-    return await this.wordService.test(str);
+    return await this.wordService.getWordDefinitionsFromKrDictApi(str);
   }
 
   @ApiOperation({ summary: '랜덤한 단어 한개 반환' })
@@ -47,8 +47,8 @@ export class WordController {
   @ApiParam({ name: 'word' })
   @Get('check/:word')
   @HttpCode(HttpStatus.OK)
-  checkWord(@Param('word') word: string) {
-    return this.wordService.checkWord(word);
+  async checkWord(@Param('word') word: string) {
+    return await this.wordService.checkWord(word);
   }
 
   @ApiOperation({ summary: 'db에 단어 추가' })

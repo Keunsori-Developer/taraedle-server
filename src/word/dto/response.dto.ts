@@ -9,4 +9,8 @@ export class WordResDto {
   @ApiProperty({ example: '단어' })
   @Expose()
   value: string;
+
+  @ApiProperty({ example: '의미' })
+  @Expose()
+  definitions: string;
 }

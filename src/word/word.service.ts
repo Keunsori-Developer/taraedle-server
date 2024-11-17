@@ -17,7 +17,7 @@ import { WordResDto } from './dto/response.dto';
 import axios from 'axios';
 import * as xml2js from 'xml2js';
 import { ConfigService } from '@nestjs/config';
-import { mapJsonToStructuredData, parseXmlToJson } from './mapper/word.mapper';
+import { mapJsonToStructuredData, parseXmlToJson, transformAndExtractDefinitions } from './mapper/word.mapper';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -58,6 +58,10 @@ export class WordService {
       throw new NotFoundWordException();
     }
 
+    if (!randomWord.definitions || randomWord.length == 0) {
+      randomWord.definitions = await this.getWordDefinitionsFromKrDictApi(randomWord.value);
+    }
+
     const resDto = plainToInstance(WordResDto, randomWord, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
@@ -77,12 +81,12 @@ export class WordService {
     for (const word of wordList) {
       const existingWord = await this.wordRepository.findOne({ where: { value: word } });
       if (!existingWord) {
-        const { length, count, complexConsonantCount, complexVowelCount } = this.checkWord(word);
+        const { length, count, complexConsonantCount, complexVowelCount, definitions } = await this.checkWord(word);
         const hasComplexConsonant = complexConsonantCount > 0;
         const hasComplexVowel = complexVowelCount > 0;
 
         wordEntities.push(
-          this.wordRepository.create({ value: word, length, count, hasComplexConsonant, hasComplexVowel }),
+          this.wordRepository.create({ value: word, length, count, hasComplexConsonant, hasComplexVowel, definitions }),
         );
       }
     }
@@ -92,13 +96,14 @@ export class WordService {
     }
   }
 
-  checkWord(word: string) {
+  async checkWord(word: string) {
     const { arr, complexConsonantCount, complexVowelCount } = this.decomposeConstantsHandle(
       this.decomposeHangulString(word),
     );
     const length = word.length;
     const count = arr.length;
-    return { arr, length, count, complexConsonantCount, complexVowelCount };
+    const definitions = await this.getWordDefinitionsFromKrDictApi(word);
+    return { arr, length, count, complexConsonantCount, complexVowelCount, definitions };
   }
 
   /**
@@ -279,7 +284,7 @@ export class WordService {
     return streak;
   }
 
-  async test(str: string) {
+  async getWordDefinitionsFromKrDictApi(str: string) {
     console.log(str);
     const url = 'https://krdict.korean.go.kr/api/search';
     const params = {
@@ -293,11 +298,11 @@ export class WordService {
     try {
       const response = await axios.get(url, { params });
       const xmlData = response.data;
-
       const jsonData = await parseXmlToJson(xmlData);
       const structuredData = mapJsonToStructuredData(jsonData);
 
-      return structuredData;
+      const definitions = transformAndExtractDefinitions(structuredData);
+      return JSON.stringify(definitions);
     } catch (error) {
       console.error('Error fetching or processing data:', error.message);
     }

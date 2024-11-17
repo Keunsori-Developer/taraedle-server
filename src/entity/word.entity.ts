@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity({ name: 'word' })
 export class Word {
@@ -20,6 +20,12 @@ export class Word {
   @Column({ name: 'has_complex_vowel', type: 'boolean', default: false })
   hasComplexVowel: boolean;
 
+  @Column({ name: 'definitions', type: 'text', nullable: true })
+  definitions: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }
