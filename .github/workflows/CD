@@ -1,6 +1,11 @@
 name: CD-develop
 run-name: ${{ github.actor }} ran github actions
 
+on:
+  push:
+    branches:
+      - develop
+
 jobs:
   Delivery:
     env:
@@ -44,3 +49,53 @@ jobs:
           push: true
           no-cache: true
           tags: ${{ steps.meta.outputs.tags }}
+
+  # Deploy:
+  #   env:
+  #     PORT: 22
+  #     IP: ${{ secrets.SSH_IP }}
+  #     USER: ${{ secrets.SSH_ID }}
+  #     NAME: ${{ inputs.appname }}
+  #   runs-on: ubuntu-latest
+  #   needs: Delivery
+
+  #   steps:
+  #     - name: SSH key create
+  #       run: |
+  #         mkdir -p ~/.ssh
+  #         echo "$PEM" > ~/.ssh/id_ed25519
+  #         sudo chmod 600 ~/.ssh/id_ed25519
+  #       env:
+  #         PEM: ${{ secrets.CODEMON_PEM }}
+
+  #     - name: Add host to known_hosts
+  #       run: |
+  #         chmod 700 ~/.ssh
+  #         ssh-keyscan -p $PORT $IP >> ~/.ssh/known_hosts
+
+  #     - name: Stop previous container
+  #       continue-on-error: true
+  #       run: |
+  #         ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker stop $NAME
+
+  #     - name: Remove previous container
+  #       continue-on-error: true
+  #       run: |
+  #         ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker rm $NAME
+
+  #     - name: Remove previous image
+  #       continue-on-error: true
+  #       run: |
+  #         ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker rmi ${{ needs.Delivery.outputs.image }}
+
+  #     - name: Deploy Server
+  #       run: |
+  #         ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker pull ${{ needs.Delivery.outputs.image }}
+
+  #         ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker run -d \
+  #         -e NODE_ENV=dev \
+  #         --name $NAME \
+  #         --expose 8000 \
+  #         --network=nginx-proxy \
+  #         -e DD_ENV=none \
+  #         ${{ needs.Delivery.outputs.image }}
