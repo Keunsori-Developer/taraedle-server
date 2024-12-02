@@ -1,0 +1,19 @@
+services:
+  taraedle_server:
+    image: 'taraedle_server'
+    build: .
+    container_name: taraedle_server
+    env_file:
+      - .env
+    expose:
+      - '8000'
+    restart: always
+    networks:
+      - nginx-proxy
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '500m'
+networks:
+  nginx-proxy:
+    external: true
