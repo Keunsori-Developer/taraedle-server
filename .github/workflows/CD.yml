@@ -7,10 +7,12 @@ on:
       - develop
   workflow_dispatch:
 
+env:
+  DOCKER_IMAGE: sbmsky/taraedle_server:develop
+  SSH_CONTAINER: taraedle_server
+
 jobs:
   Delivery:
-    env:
-      NAME: 'taraedle_server'
     runs-on: ubuntu-latest
 
     outputs:
@@ -30,12 +32,6 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_ACCESSTOKEN }}
 
-      - name: Create image name
-        id: meta
-        run: |
-          echo "tags=${{ secrets.DOCKER_USER }}/$NAME:develop" >> "$GITHUB_OUTPUT"
-          echo "Generated tag: ${{ secrets.DOCKER_USER }}/$NAME:develop"
-
       - name: create ENV
         env:
           ENV_DEVELOPMENT: ${{ secrets.ENV_DEVELOPMENT }}
@@ -50,14 +46,13 @@ jobs:
           context: .
           push: true
           no-cache: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ env.DOCKER_IMAGE }}
 
   Deploy:
     env:
       PORT: 22
       IP: ${{ secrets.SSH_IP }}
       USER: ${{ secrets.SSH_ID }}
-      NAME: 'taraedle_server'
     runs-on: ubuntu-latest
     needs: Delivery
 
@@ -78,21 +73,21 @@ jobs:
       - name: Stop previous container
         continue-on-error: true
         run: |
-          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker stop $NAME
+          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker stop $SSH_CONTAINER
 
       - name: Remove previous container
         continue-on-error: true
         run: |
-          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker rm $NAME
+          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker rm $SSH_CONTAINER
 
       - name: Remove previous image
         continue-on-error: true
         run: |
-          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker rmi ${{ needs.Delivery.outputs.image }}
+          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker rmi $DOCKER_IMAGE
 
       - name: Deploy Server
         run: |
-          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker pull ${{ needs.Delivery.outputs.image }}
+          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker pull $DOCKER_IMAGE
 
           ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker run -d \
           -e NODE_ENV=dev \
