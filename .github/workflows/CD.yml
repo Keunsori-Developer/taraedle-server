@@ -15,9 +15,6 @@ jobs:
   Delivery:
     runs-on: ubuntu-latest
 
-    outputs:
-      image: ${{ steps.meta.outputs.tags }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +29,7 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_ACCESSTOKEN }}
 
-      - name: create ENV
+      - name: Create ENV
         env:
           ENV_DEVELOPMENT: ${{ secrets.ENV_DEVELOPMENT }}
         run: |
@@ -46,13 +43,13 @@ jobs:
           context: .
           push: true
           no-cache: true
-          tags: $DOCKER_IMAGE
+          tags: ${{ env.DOCKER_IMAGE }}
 
   Deploy:
     env:
-      PORT: 22
       IP: ${{ secrets.SSH_IP }}
       USER: ${{ secrets.SSH_ID }}
+      NAME: ${{ env.SSH_CONTAINER }}
     runs-on: ubuntu-latest
     needs: Delivery
 
@@ -68,28 +65,28 @@ jobs:
       - name: Add host to known_hosts
         run: |
           chmod 700 ~/.ssh
-          ssh-keyscan -p $PORT $IP >> ~/.ssh/known_hosts
+          ssh-keyscan $IP >> ~/.ssh/known_hosts
 
       - name: Stop previous container
         continue-on-error: true
         run: |
-          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker stop $SSH_CONTAINER
+          ssh -tt -i ~/.ssh/id_ed25519 $USER@$IP docker stop $NAME
 
       - name: Remove previous container
         continue-on-error: true
         run: |
-          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker rm $SSH_CONTAINER
+          ssh -tt -i ~/.ssh/id_ed25519 $USER@$IP docker rm $NAME
 
       - name: Remove previous image
         continue-on-error: true
         run: |
-          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker rmi $DOCKER_IMAGE
+          ssh -tt -i ~/.ssh/id_ed25519 $USER@$IP docker rmi $DOCKER_IMAGE
 
       - name: Deploy Server
         run: |
-          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker pull $DOCKER_IMAGE
+          ssh -tt -i ~/.ssh/id_ed25519 $USER@$IP docker pull $DOCKER_IMAGE
 
-          ssh -tt -i ~/.ssh/id_ed25519 -p $PORT $USER@$IP docker run -d \
+          ssh -tt -i ~/.ssh/id_ed25519 $USER@$IP docker run -d \
           -e NODE_ENV=dev \
           --name $NAME \
           --expose 8000 \
