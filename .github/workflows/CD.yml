@@ -46,7 +46,7 @@ jobs:
           context: .
           push: true
           no-cache: true
-          tags: ${{ env.DOCKER_IMAGE }}
+          tags: $DOCKER_IMAGE
 
   Deploy:
     env:
@@ -94,4 +94,4 @@ jobs:
           --name $NAME \
           --expose 8000 \
           --network=nginx-proxy \
-          ${{ needs.Delivery.outputs.image }}
+          $DOCKER_IMAGE
