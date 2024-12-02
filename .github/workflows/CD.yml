@@ -9,7 +9,6 @@ on:
 
 env:
   DOCKER_IMAGE: sbmsky/taraedle_server:develop
-  SSH_CONTAINER: taraedle_server
 
 jobs:
   Delivery:
@@ -49,7 +48,7 @@ jobs:
     env:
       IP: ${{ secrets.SSH_IP }}
       USER: ${{ secrets.SSH_ID }}
-      NAME: ${{ env.SSH_CONTAINER }}
+      NAME: taraedle_server
     runs-on: ubuntu-latest
     needs: Delivery
 
