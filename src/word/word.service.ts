@@ -15,7 +15,6 @@ import { DeepPartial, Repository } from 'typeorm';
 import { GetWordReqDto, SolveWordReqDto } from './dto/request.dto';
 import { WordResDto } from './dto/response.dto';
 import axios from 'axios';
-import * as xml2js from 'xml2js';
 import { ConfigService } from '@nestjs/config';
 import { mapJsonToStructuredData, parseXmlToJson, transformAndExtractDefinitions } from './mapper/word.mapper';
 
@@ -29,6 +28,7 @@ export class WordService {
     @InjectRepository(SolvedWord) private solvedWordRepository: Repository<SolvedWord>,
     private readonly configService: ConfigService,
   ) {}
+
   async getRandomWord(dto: GetWordReqDto): Promise<WordResDto> {
     const randomWordQueryBuilder = this.wordRepository.createQueryBuilder();
 
@@ -61,6 +61,8 @@ export class WordService {
     //TODO: null일때 리턴 이후에 db update 실행
     if (!randomWord.definitions || randomWord.length == 0) {
       randomWord.definitions = await this.getWordDefinitionsFromKrDictApi(randomWord.value);
+
+      await this.wordRepository.save(randomWord);
     }
 
     const resDto = plainToInstance(WordResDto, randomWord, {
