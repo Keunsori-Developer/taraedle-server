@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import dayjs from 'dayjs';
@@ -100,13 +100,18 @@ export class WordService {
   }
 
   async checkWord(word: string) {
-    const { arr, complexConsonantCount, complexVowelCount } = this.decomposeConstantsHandle(
-      this.decomposeHangulString(word),
-    );
-    const length = word.length;
-    const count = arr.length;
-    const definitions = await this.getWordDefinitionsFromKrDictApi(word);
-    return { arr, length, count, complexConsonantCount, complexVowelCount, definitions };
+    try {
+      const { arr, complexConsonantCount, complexVowelCount } = this.decomposeConstants(
+        this.decomposeHangulString(word),
+      );
+      const length = word.length;
+      const count = arr.length;
+      const definitions = await this.getWordDefinitionsFromKrDictApi(word);
+      return { arr, length, count, complexConsonantCount, complexVowelCount, definitions };
+    } catch (error) {
+      console.error(error.message);
+      throw new InternalServerErrorException();
+    }
   }
 
   /**
@@ -114,7 +119,7 @@ export class WordService {
    * ㅃ,ㅉ,ㄸ,ㄲ,ㅆ,ㅒ,ㅖ는 한개로 처리, 복합 카운트 증가 시키지 않음.
    * ㅐ,ㅔ 등도 한개로 처리.
    */
-  private decomposeConstantsHandle(arr: string[]) {
+  private decomposeConstants(arr: string[]) {
     let complexConsonantCount = 0;
     let complexVowelCount = 0;
 
@@ -209,7 +214,6 @@ export class WordService {
 
   async solveWord(userId: User['id'], dto: SolveWordReqDto) {
     const { attempts, isSolved, wordId } = dto;
-
     const word = await this.wordRepository.findOne({ where: { id: wordId } });
     if (!word) {
       throw new InvalidWordException();
