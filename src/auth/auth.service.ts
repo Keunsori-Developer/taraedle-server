@@ -14,7 +14,7 @@ import { UserProvider } from 'src/user/enum/user-provider.enum';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { AppGuestLoginReqDto } from './dto/request.dto';
-import { AppGoogleLoginResDto, AppGuestLoginResDto, TokenResDto, WebGoogleLoginResDto } from './dto/response.dto';
+import { AppGoogleLoginResDto, AppGuestLoginResDto, LoginResDto, WebGoogleLoginResDto } from './dto/response.dto';
 import { JwtTokenType } from './enum/jwt-token-type.enum';
 
 @Injectable()
@@ -150,7 +150,7 @@ export class AuthService {
     return resDto;
   }
 
-  async refresh(token: string): Promise<TokenResDto> {
+  async refresh(token: string): Promise<LoginResDto> {
     const prevRefreshToken = await this.tokenRepository.findOne({ where: { refreshToken: token } });
     if (!prevRefreshToken) {
       throw new BadRequestException('Invalid refreshtoken');
@@ -161,13 +161,19 @@ export class AuthService {
     const user = await this.userService.fineOneById(id);
 
     if (!user) {
-      throw new BadRequestException('Invalid User');
+      throw new InvalidUserException();
     }
+
+    const userDto = plainToInstance(UserResDto, user, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
 
     const { newAccessToken, newRefreshToken } = await this.generateBothTokens(user);
     await this.tokenRepository.save(this.tokenRepository.create({ refreshToken: newRefreshToken }));
 
-    const resDto = new TokenResDto(newAccessToken, newRefreshToken);
+    const resDto = new LoginResDto(newAccessToken, newRefreshToken);
+    resDto.user = userDto;
 
     return resDto;
   }

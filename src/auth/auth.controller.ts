@@ -14,7 +14,7 @@ import {
   RefreshTokenReqDto,
   WebGoogleLoginReqDto,
 } from './dto/request.dto';
-import { AppGoogleLoginResDto, AppGuestLoginResDto, TokenResDto, WebGoogleLoginResDto } from './dto/response.dto';
+import { AppGoogleLoginResDto, AppGuestLoginResDto, LoginResDto, WebGoogleLoginResDto } from './dto/response.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -71,10 +71,11 @@ export class AuthController {
     description: 'AccessToken 만료로 401을 받았을때 AccessToken 재발급 요청',
   })
   @ApiBody({ type: RefreshTokenReqDto })
-  @ApiPostResponse(TokenResDto)
+  @ApiPostResponse(LoginResDto)
+  @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.INVALID_USER]])
   @Post('refresh')
   @HttpCode(HttpStatus.CREATED)
-  async refresh(@Body() dto: RefreshTokenReqDto): Promise<TokenResDto> {
+  async refresh(@Body() dto: RefreshTokenReqDto): Promise<LoginResDto> {
     const { refreshToken } = dto;
     return await this.authService.refresh(refreshToken);
   }
