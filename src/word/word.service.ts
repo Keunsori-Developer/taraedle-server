@@ -17,7 +17,8 @@ import { WordResDto } from './dto/response.dto';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { mapJsonToStructuredData, parseXmlToJson, transformAndExtractDefinitions } from './mapper/word.mapper';
-import { QuizStatus } from 'src/quiz/enum/quiz.enum';
+import { QuizDifficulty, QuizStatus } from 'src/quiz/enum/quiz.enum';
+import { DIFFICULTY_MAP } from 'src/quiz/interface/quiz-difficulty.interface';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -74,7 +75,17 @@ export class WordService {
     return resDto;
   }
 
-  async getRandomWordForQuiz(userId: string, dto: GetWordReqDto) {
+  async getRandomWordForQuiz(userId: string, difficulty: QuizDifficulty) {
+    const { lengthMin, lengthMax, countMin, countMax, complexVowel, complexConsonant } = DIFFICULTY_MAP[difficulty] || {
+      lengthMin: 2,
+      lengthMax: 3,
+      countMin: 4,
+      countMax: 6,
+      complexVowel: false,
+      complexConsonant: false,
+      maxAttempts: 6,
+    };
+
     const randomWordQueryBuilder = this.wordRepository.createQueryBuilder('word');
 
     // 이미 풀었고 맞춘 단어들 제외
@@ -88,21 +99,27 @@ export class WordService {
       { userId, status: QuizStatus.SOLVED },
     );
 
-    if (dto.length) {
-      randomWordQueryBuilder.andWhere('word.length = :length', { length: dto.length });
+    if (lengthMin !== undefined && lengthMax !== undefined) {
+      randomWordQueryBuilder.andWhere('word.length BETWEEN :lengthMin AND :lengthMax', {
+        lengthMin,
+        lengthMax,
+      });
     }
 
-    if (dto.count) {
-      randomWordQueryBuilder.andWhere('word.count = :count', { count: dto.count });
+    if (countMin !== undefined && countMax !== undefined) {
+      randomWordQueryBuilder.andWhere('word.count BETWEEN :countMin AND :countMax', {
+        countMin,
+        countMax,
+      });
     }
 
-    if (dto.complexVowel !== undefined) {
-      randomWordQueryBuilder.andWhere('word.has_complex_vowel = :complexVowel', { complexVowel: dto.complexVowel });
+    if (complexVowel !== undefined) {
+      randomWordQueryBuilder.andWhere('word.has_complex_vowel = :complexVowel', { complexVowel });
     }
 
-    if (dto.complexConsonant !== undefined) {
+    if (complexConsonant !== undefined) {
       randomWordQueryBuilder.andWhere('word.has_complex_consonant = :complexConsonant', {
-        complexConsonant: dto.complexConsonant,
+        complexConsonant,
       });
     }
 

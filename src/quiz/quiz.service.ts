@@ -3,7 +3,7 @@ import { Quiz } from 'src/entity/quiz.entity';
 import { UserService } from 'src/user/user.service';
 import { WordService } from 'src/word/word.service';
 import { Repository } from 'typeorm';
-import { QuizAttemptReqDto } from './dto/quiz.request.dto';
+import { QuizAttemptReqDto, QuizStartReqDto } from './dto/quiz.request.dto';
 import {
   FinishedQuizException,
   InvalidQuizException,
@@ -11,7 +11,9 @@ import {
 } from 'src/common/exception/invalid.exception';
 import { v4 as uuidv4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QuizStatus } from './enum/quiz.enum';
+import { QuizDifficulty, QuizStatus } from './enum/quiz.enum';
+import * as hangul from 'hangul-js';
+import { DIFFICULTY_MAP } from './interface/quiz-difficulty.interface';
 
 @Injectable()
 export class QuizService {
@@ -22,7 +24,8 @@ export class QuizService {
     private readonly wordService: WordService,
   ) {}
 
-  async startNewQuiz(userId: string) {
+  async startNewQuiz(userId: string, dto: QuizStartReqDto) {
+    const { difficulty } = dto;
     const user = await this.userService.fineOneById(userId);
 
     if (!user) {
@@ -30,14 +33,15 @@ export class QuizService {
     }
 
     const uuid = uuidv4();
-    const randomWord = await this.wordService.getRandomWordForQuiz(userId, {});
+    const randomWord = await this.wordService.getRandomWordForQuiz(userId, difficulty);
 
     const quiz = await this.quizRepository.save({
       uuid,
       word: randomWord,
       user,
+      difficulty,
     });
-    console.log(quiz);
+
     return quiz;
   }
 
@@ -52,16 +56,20 @@ export class QuizService {
       throw new InvalidQuizException();
     }
 
-    if (quiz.status === QuizStatus.SOLVED) {
+    if (quiz.status !== QuizStatus.IN_PROGRESS) {
       throw new FinishedQuizException();
     }
 
+    const transformedAnswer = hangul.assemble(answer.split(''));
+    quiz.attempts = (quiz.attempts ?? 0) + 1;
+
     // 문제 풀이 성공
-    if (answer == quiz.word.value) {
+    if (transformedAnswer == quiz.word.value) {
       quiz.status = QuizStatus.SOLVED;
-      quiz.attempts = (quiz.attempts ?? 0) + 1;
     } else {
-      quiz.attempts = (quiz.attempts ?? 0) + 1;
+      if (quiz.attempts >= DIFFICULTY_MAP[QuizDifficulty[quiz.difficulty]].maxAttempts) {
+        quiz.status = QuizStatus.FAILED;
+      }
     }
 
     const updatedQuiz = await this.quizRepository.save(quiz);

@@ -3,3 +3,10 @@ export enum QuizStatus {
   SOLVED = 'solved',
   FAILED = 'failed',
 }
+
+export enum QuizDifficulty {
+  EASY = 'EASY',
+  MEDIUM = 'MEDIUM',
+  HARD = 'HARD',
+  VERYHARD = 'VERYHARD',
+}

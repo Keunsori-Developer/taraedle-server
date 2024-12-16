@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponse } from 'src/common/decorator/error-response.decorator';
 import { Jwt, JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
 import { ApiGetResponse } from 'src/common/decorator/swagger.decorator';
@@ -15,15 +15,7 @@ import { WordService } from './word.service';
 export class WordController {
   constructor(private wordService: WordService) {}
 
-  @ApiOperation({ summary: 'test' })
-  @ApiQuery({ name: 'str' })
-  @Get('test')
-  @HttpCode(HttpStatus.OK)
-  async test(@Query('str') str: string) {
-    return await this.wordService.getWordDefinitionsFromKrDictApi(str);
-  }
-
-  @ApiOperation({ summary: '랜덤한 단어 한개 반환' })
+  @ApiOperation({ summary: '랜덤한 단어 한개 반환', deprecated: true })
   @ApiGetResponse(WordResDto)
   @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.NOTFOUND_WORD]])
   @Get()
@@ -32,7 +24,7 @@ export class WordController {
     return await this.wordService.getRandomWord(dto);
   }
 
-  @ApiOperation({ summary: '랜덤한 단어 한개 반환, jwt 인증 필요' })
+  @ApiOperation({ summary: '랜덤한 단어 한개 반환, jwt 인증 필요', deprecated: true })
   @ApiBearerAuth()
   @ApiGetResponse(WordResDto)
   @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.NOTFOUND_WORD]])
@@ -43,7 +35,7 @@ export class WordController {
     return await this.wordService.getRandomWord(dto);
   }
 
-  @ApiOperation({ summary: '단어 정보 확인' })
+  @ApiOperation({ summary: '단어 정보 확인', deprecated: true })
   @ApiParam({ name: 'word' })
   @Get('check/:word')
   @HttpCode(HttpStatus.OK)
@@ -51,7 +43,7 @@ export class WordController {
     return await this.wordService.checkWord(word);
   }
 
-  @ApiOperation({ summary: 'db에 단어 추가' })
+  @ApiOperation({ summary: 'db에 단어 추가', deprecated: true })
   @ApiBody({ type: AddWordReqDto })
   @Post('')
   @HttpCode(HttpStatus.OK)
@@ -59,7 +51,7 @@ export class WordController {
     return await this.wordService.addWordsIntoDatabase(dto.words);
   }
 
-  @ApiOperation({ summary: '풀이 결과 저장' })
+  @ApiOperation({ summary: '풀이 결과 저장', deprecated: true })
   @ApiBody({ type: SolveWordReqDto })
   @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.INVALID_WORD]])
   @Post('solve')
