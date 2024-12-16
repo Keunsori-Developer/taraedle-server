@@ -1,6 +1,11 @@
 import { ApiErrorResponseOption } from '../decorator/error-response.decorator';
 import { CustomExceptionCode } from '../enum/custom-exception-code.enum';
-import { InvalidUserException, InvalidWordException } from './invalid.exception';
+import {
+  FinishedQuizException,
+  InvalidQuizException,
+  InvalidUserException,
+  InvalidWordException,
+} from './invalid.exception';
 import { NotFoundWordException } from './notfound.exception';
 import { ExpiredJwtException, InvalidJwtException } from './token.exception';
 
@@ -29,6 +34,20 @@ export const CustomErrorDefinitions: Record<CustomExceptionCode, ApiErrorRespons
     exampleTitle: CustomExceptionCode[CustomExceptionCode.INVALID_WORD],
     exampleDescription: `유효하지 않은 단어 (${CustomExceptionCode.INVALID_WORD})`,
     code: CustomExceptionCode.INVALID_WORD,
+  },
+
+  [CustomExceptionCode.INVALID_QUIZ]: {
+    model: InvalidQuizException,
+    exampleTitle: CustomExceptionCode[CustomExceptionCode.INVALID_QUIZ],
+    exampleDescription: `유효하지 않은 퀴즈 (${CustomExceptionCode.INVALID_QUIZ})`,
+    code: CustomExceptionCode.INVALID_QUIZ,
+  },
+
+  [CustomExceptionCode.FINISHED_QUIZ]: {
+    model: FinishedQuizException,
+    exampleTitle: CustomExceptionCode[CustomExceptionCode.FINISHED_QUIZ],
+    exampleDescription: `이미 풀린 퀴즈 (${CustomExceptionCode.FINISHED_QUIZ})`,
+    code: CustomExceptionCode.FINISHED_QUIZ,
   },
   [CustomExceptionCode.NOTFOUND_WORD]: {
     model: NotFoundWordException,

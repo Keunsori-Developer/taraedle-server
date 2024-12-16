@@ -17,6 +17,7 @@ import { WordResDto } from './dto/response.dto';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { mapJsonToStructuredData, parseXmlToJson, transformAndExtractDefinitions } from './mapper/word.mapper';
+import { QuizStatus } from 'src/quiz/enum/quiz.enum';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -71,6 +72,54 @@ export class WordService {
     });
 
     return resDto;
+  }
+
+  async getRandomWordForQuiz(userId: string, dto: GetWordReqDto) {
+    const randomWordQueryBuilder = this.wordRepository.createQueryBuilder('word');
+
+    // 이미 풀었고 맞춘 단어들 제외
+    randomWordQueryBuilder.where(
+      `word.id NOT IN (
+        SELECT quiz.word_id 
+        FROM quiz 
+        WHERE quiz.user_id = :userId 
+        AND quiz.status = :status
+      )`,
+      { userId, status: QuizStatus.SOLVED },
+    );
+
+    if (dto.length) {
+      randomWordQueryBuilder.andWhere('word.length = :length', { length: dto.length });
+    }
+
+    if (dto.count) {
+      randomWordQueryBuilder.andWhere('word.count = :count', { count: dto.count });
+    }
+
+    if (dto.complexVowel !== undefined) {
+      randomWordQueryBuilder.andWhere('word.has_complex_vowel = :complexVowel', { complexVowel: dto.complexVowel });
+    }
+
+    if (dto.complexConsonant !== undefined) {
+      randomWordQueryBuilder.andWhere('word.has_complex_consonant = :complexConsonant', {
+        complexConsonant: dto.complexConsonant,
+      });
+    }
+
+    randomWordQueryBuilder.orderBy('RANDOM()').limit(1);
+
+    const randomWord = await randomWordQueryBuilder.getOne();
+
+    if (!randomWord) {
+      throw new NotFoundWordException();
+    }
+
+    if (!randomWord.definitions || randomWord.length == 0) {
+      randomWord.definitions = await this.getWordDefinitionsFromKrDictApi(randomWord.value);
+      await this.wordRepository.save(randomWord);
+    }
+
+    return randomWord;
   }
 
   async addWordsIntoDatabase(words: string) {

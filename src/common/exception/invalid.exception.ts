@@ -21,3 +21,15 @@ export class InvalidWordException extends InvalidException {
     super({ errorCode: CustomExceptionCode.INVALID_WORD, message: message });
   }
 }
+
+export class InvalidQuizException extends InvalidException {
+  constructor(message?: string | HttpExceptionOptions) {
+    super({ errorCode: CustomExceptionCode.INVALID_QUIZ, message: message });
+  }
+}
+
+export class FinishedQuizException extends InvalidException {
+  constructor(message?: string | HttpExceptionOptions) {
+    super({ errorCode: CustomExceptionCode.FINISHED_QUIZ, message: message });
+  }
+}

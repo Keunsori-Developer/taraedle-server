@@ -11,6 +11,7 @@ import { TypeOrmConfigService } from './database/typeorm-config.service';
 import databaseConfig from './config/database.config';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { AchievementModule } from './achievement/achievement.module';
+import { QuizModule } from './quiz/quiz.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AchievementModule } from './achievement/achievement.module';
     UserModule,
     WordModule,
     AchievementModule,
+    QuizModule,
   ],
   controllers: [AppController],
   providers: [AppService],
