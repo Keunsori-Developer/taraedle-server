@@ -2,7 +2,7 @@ import { Body, Controller, HttpCode, HttpStatus, Param, Post, UseGuards } from '
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { QuizService } from './quiz.service';
 import { Jwt, JwtPayLoad } from 'src/common/decorator/jwt-payload.decorator';
-import { QuizResDto, QuizSolveResDto } from './dto/quiz.response.dto';
+import { QuizDifficultyResDto, QuizResDto, QuizSolveResDto } from './dto/quiz.response.dto';
 import { plainToInstance } from 'class-transformer';
 import { QuizAttemptReqDto, QuizStartReqDto } from './dto/quiz.request.dto';
 import { ApiPostResponse } from 'src/common/decorator/swagger.decorator';
@@ -34,8 +34,15 @@ export class QuizController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async startNewQuiz(@Jwt() JwtPayload: JwtPayLoad, @Body() dto: QuizStartReqDto) {
-    const quiz = await this.quizService.startNewQuiz(JwtPayload.id, dto);
-    return plainToInstance(QuizResDto, quiz, { excludeExtraneousValues: true });
+    const { quiz, difficultyConfig } = await this.quizService.startNewQuiz(JwtPayload.id, dto);
+
+    const resDto = plainToInstance(QuizResDto, quiz, { excludeExtraneousValues: true });
+    const difficultyResDto = plainToInstance(QuizDifficultyResDto, difficultyConfig, {
+      excludeExtraneousValues: true,
+    });
+
+    resDto.difficulty = difficultyResDto;
+    return resDto;
   }
 
   @ApiOperation({ summary: '퀴즈 풀이 결과 저장' })

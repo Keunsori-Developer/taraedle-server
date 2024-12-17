@@ -121,7 +121,6 @@ export class WordService {
     }
 
     if (complexVowel !== undefined) {
-      console.log('complexVowel', complexVowel);
       randomWordQueryBuilder.andWhere('word.has_complex_vowel = :complexVowel', { complexVowel });
     }
 
@@ -417,7 +416,6 @@ export class WordService {
       const xmlData = response.data;
       const jsonData = await parseXmlToJson(xmlData);
       const structuredData = mapJsonToStructuredData(jsonData);
-      console.log(structuredData);
       if (structuredData.total === 0) {
         throw new InvalidWordException('KrDict에서 해당 단어를 찾을 수 없습니다.');
       }

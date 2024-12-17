@@ -12,6 +12,36 @@ export class QuizWordResDto {
   definitions: string;
 }
 
+export class QuizDifficultyResDto {
+  @ApiProperty()
+  @Expose()
+  lengthMin: number;
+
+  @ApiProperty()
+  @Expose()
+  lengthMax: number;
+
+  @ApiProperty()
+  @Expose()
+  countMin: number;
+
+  @ApiProperty()
+  @Expose()
+  countMax: number;
+
+  @ApiProperty()
+  @Expose()
+  complexVowel: boolean;
+
+  @ApiProperty()
+  @Expose()
+  complexConsonant: boolean;
+
+  @ApiProperty()
+  @Expose()
+  maxAttempts: number;
+}
+
 export class QuizResDto {
   @ApiProperty()
   @Expose()
@@ -21,6 +51,11 @@ export class QuizResDto {
   @Expose()
   @Type(() => QuizWordResDto)
   word: QuizWordResDto;
+
+  @ApiProperty()
+  @Expose()
+  @Type(() => QuizDifficultyResDto)
+  difficulty: QuizDifficultyResDto;
 }
 
 export class QuizSolveResDto {
