@@ -17,7 +17,9 @@ import { WordResDto } from './dto/response.dto';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { mapJsonToStructuredData, parseXmlToJson, transformAndExtractDefinitions } from './mapper/word.mapper';
-import { QuizStatus } from 'src/quiz/enum/quiz.enum';
+import { QuizDifficulty, QuizStatus } from 'src/quiz/enum/quiz.enum';
+import { DIFFICULTY_MAP } from 'src/quiz/interface/quiz-difficulty.interface';
+import hangul from 'hangul-js';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -61,7 +63,13 @@ export class WordService {
 
     //TODO: null일때 리턴 이후에 db update 실행
     if (!randomWord.definitions || randomWord.length == 0) {
-      randomWord.definitions = await this.getWordDefinitionsFromKrDictApi(randomWord.value);
+      const { success, definitions } = await this.checkAndgetWordDefinitionsFromKrDictApi(randomWord.value);
+
+      if (!success) {
+        throw new InvalidWordException();
+      }
+
+      randomWord.definitions = definitions;
 
       await this.wordRepository.save(randomWord);
     }
@@ -74,7 +82,17 @@ export class WordService {
     return resDto;
   }
 
-  async getRandomWordForQuiz(userId: string, dto: GetWordReqDto) {
+  async getRandomWordForQuiz(userId: string, difficulty: QuizDifficulty) {
+    const { lengthMin, lengthMax, countMin, countMax, complexVowel, complexConsonant } = DIFFICULTY_MAP[difficulty] || {
+      lengthMin: 2,
+      lengthMax: 3,
+      countMin: 4,
+      countMax: 6,
+      complexVowel: false,
+      complexConsonant: false,
+      maxAttempts: 6,
+    };
+
     const randomWordQueryBuilder = this.wordRepository.createQueryBuilder('word');
 
     // 이미 풀었고 맞춘 단어들 제외
@@ -88,21 +106,28 @@ export class WordService {
       { userId, status: QuizStatus.SOLVED },
     );
 
-    if (dto.length) {
-      randomWordQueryBuilder.andWhere('word.length = :length', { length: dto.length });
+    if (lengthMin !== undefined && lengthMax !== undefined) {
+      randomWordQueryBuilder.andWhere('word.length BETWEEN :lengthMin AND :lengthMax', {
+        lengthMin,
+        lengthMax,
+      });
     }
 
-    if (dto.count) {
-      randomWordQueryBuilder.andWhere('word.count = :count', { count: dto.count });
+    if (countMin !== undefined && countMax !== undefined) {
+      randomWordQueryBuilder.andWhere('word.count BETWEEN :countMin AND :countMax', {
+        countMin,
+        countMax,
+      });
     }
 
-    if (dto.complexVowel !== undefined) {
-      randomWordQueryBuilder.andWhere('word.has_complex_vowel = :complexVowel', { complexVowel: dto.complexVowel });
+    if (complexVowel !== undefined) {
+      console.log('complexVowel', complexVowel);
+      randomWordQueryBuilder.andWhere('word.has_complex_vowel = :complexVowel', { complexVowel });
     }
 
-    if (dto.complexConsonant !== undefined) {
+    if (complexConsonant !== undefined) {
       randomWordQueryBuilder.andWhere('word.has_complex_consonant = :complexConsonant', {
-        complexConsonant: dto.complexConsonant,
+        complexConsonant,
       });
     }
 
@@ -114,8 +139,14 @@ export class WordService {
       throw new NotFoundWordException();
     }
 
-    if (!randomWord.definitions || randomWord.length == 0) {
-      randomWord.definitions = await this.getWordDefinitionsFromKrDictApi(randomWord.value);
+    if (!randomWord.definitions) {
+      const { success, definitions } = await this.checkAndgetWordDefinitionsFromKrDictApi(randomWord.value);
+
+      if (!success) {
+        throw new InternalServerErrorException();
+      }
+
+      randomWord.definitions = definitions;
       await this.wordRepository.save(randomWord);
     }
 
@@ -133,7 +164,13 @@ export class WordService {
     for (const word of wordList) {
       const existingWord = await this.wordRepository.findOne({ where: { value: word } });
       if (!existingWord) {
-        const { length, count, complexConsonantCount, complexVowelCount, definitions } = await this.checkWord(word);
+        const { success, definitions } = await this.checkAndgetWordDefinitionsFromKrDictApi(word);
+
+        if (!success) {
+          continue;
+        }
+
+        const { length, count, complexConsonantCount, complexVowelCount } = await this.checkWord(word);
         const hasComplexConsonant = complexConsonantCount > 0;
         const hasComplexVowel = complexVowelCount > 0;
 
@@ -148,19 +185,40 @@ export class WordService {
     }
   }
 
-  async checkWord(word: string) {
-    try {
-      const { arr, complexConsonantCount, complexVowelCount } = this.decomposeConstants(
-        this.decomposeHangulString(word),
-      );
-      const length = word.length;
-      const count = arr.length;
-      const definitions = await this.getWordDefinitionsFromKrDictApi(word);
-      return { arr, length, count, complexConsonantCount, complexVowelCount, definitions };
-    } catch (error) {
-      console.error(error.message);
-      throw new InternalServerErrorException();
+  async getWordInfo(word: string) {
+    const transformedWord = hangul.assemble(word.split('')).trim();
+    let existingWord = await this.wordRepository.findOne({ where: { value: transformedWord } });
+
+    if (!existingWord) {
+      const { success, definitions } = await this.checkAndgetWordDefinitionsFromKrDictApi(transformedWord);
+
+      if (!success) {
+        throw new InvalidWordException();
+      }
+
+      const { length, count, complexConsonantCount, complexVowelCount } = await this.checkWord(transformedWord);
+      const hasComplexConsonant = complexConsonantCount > 0;
+      const hasComplexVowel = complexVowelCount > 0;
+
+      existingWord = await this.wordRepository.save({
+        value: transformedWord,
+        length,
+        count,
+        hasComplexConsonant,
+        hasComplexVowel,
+        definitions,
+      });
     }
+
+    return existingWord;
+  }
+
+  async checkWord(word: string) {
+    const { arr, complexConsonantCount, complexVowelCount } = this.decomposeConstants(this.decomposeHangulString(word));
+    const length = word.length;
+    const count = arr.length;
+
+    return { arr, length, count, complexConsonantCount, complexVowelCount };
   }
 
   /**
@@ -273,23 +331,26 @@ export class WordService {
     );
   }
 
+  //TODO: fix
   async getUserSolveData(user: User) {
     if (!user) {
       throw new InvalidUserException();
     }
-    const solveCount = (await this.solvedWordRepository.count({ where: { user: { id: user.id } } })) ?? 0;
-    const lastSolveRaw = await this.solvedWordRepository.findOne({
-      where: { user: { id: user.id }, isSolved: true },
-      order: { id: 'desc' },
-    });
+    // const solveCount = (await this.solvedWordRepository.count({ where: { user: { id: user.id } } })) ?? 0;
+    // const lastSolveRaw = await this.solvedWordRepository.findOne({
+    //   where: { user: { id: user.id }, isSolved: true },
+    //   order: { id: 'desc' },
+    // });
 
-    const solveStreak = await this.getCurrentSolveStreak(user.id);
+    // const solveStreak = await this.getCurrentSolveStreak(user.id);
 
-    const lastSolve = lastSolveRaw?.createdAt.toLocaleString() ?? null;
+    // const lastSolve = lastSolveRaw?.createdAt.toLocaleString() ?? null;
 
     const solveResDto = plainToInstance(
       UserSolveResDto,
-      { solveCount, lastSolve, solveStreak },
+      // { solveCount, lastSolve, solveStreak },
+      { solveCount: 0, lastSolve: null, solveStreak: 0 },
+
       {
         excludeExtraneousValues: true,
         enableImplicitConversion: true,
@@ -299,48 +360,49 @@ export class WordService {
     return solveResDto;
   }
 
-  async getCurrentSolveStreak(userId: User['id']) {
-    const solvedWords = await this.solvedWordRepository.find({
-      select: { createdAt: true },
-      where: { user: { id: userId }, isSolved: true },
-      order: { createdAt: 'DESC' }, // 날짜 순서대로 정렬
-    });
+  //TODO: SOLVE 대신 QUIZ로 변경
+  // async getCurrentSolveStreak(userId: User['id']) {
+  //   const solvedWords = await this.solvedWordRepository.find({
+  //     select: { createdAt: true },
+  //     where: { user: { id: userId }, isSolved: true },
+  //     order: { createdAt: 'DESC' }, // 날짜 순서대로 정렬
+  //   });
 
-    const solvedWordsInKoreaTime = solvedWords.map((word) => ({
-      ...word,
-      createdAt: dayjs(word.createdAt).tz().startOf('day'),
-    }));
+  //   const solvedWordsInKoreaTime = solvedWords.map((word) => ({
+  //     ...word,
+  //     createdAt: dayjs(word.createdAt).tz().startOf('day'),
+  //   }));
 
-    const solveDateArray = [...new Set(solvedWordsInKoreaTime.map((word) => word.createdAt))];
+  //   const solveDateArray = [...new Set(solvedWordsInKoreaTime.map((word) => word.createdAt))];
 
-    if (solveDateArray.length === 0) {
-      return 0;
-    }
-    // 처음은 오늘부터 확인
-    let targetDay = dayjs().startOf('day');
-    let streak = 0;
+  //   if (solveDateArray.length === 0) {
+  //     return 0;
+  //   }
+  //   // 처음은 오늘부터 확인
+  //   let targetDay = dayjs().startOf('day');
+  //   let streak = 0;
 
-    //오늘 풀었으면 1 추가
-    if (dayjs(solveDateArray[0]).isSame(targetDay)) {
-      streak = 1;
-    }
+  //   //오늘 풀었으면 1 추가
+  //   if (dayjs(solveDateArray[0]).isSame(targetDay)) {
+  //     streak = 1;
+  //   }
 
-    // 어제부터 이어서 확인
-    targetDay = targetDay.subtract(1, 'day');
+  //   // 어제부터 이어서 확인
+  //   targetDay = targetDay.subtract(1, 'day');
 
-    for (let i = 0; i < solveDateArray.length; i++) {
-      const solvedDate = dayjs(solveDateArray[i]);
-      if (solvedDate.isSame(targetDay)) {
-        targetDay = targetDay.subtract(1, 'day');
-        streak += 1;
-      } else {
-        break;
-      }
-    }
-    return streak;
-  }
+  //   for (let i = 0; i < solveDateArray.length; i++) {
+  //     const solvedDate = dayjs(solveDateArray[i]);
+  //     if (solvedDate.isSame(targetDay)) {
+  //       targetDay = targetDay.subtract(1, 'day');
+  //       streak += 1;
+  //     } else {
+  //       break;
+  //     }
+  //   }
+  //   return streak;
+  // }
 
-  async getWordDefinitionsFromKrDictApi(str: string) {
+  async checkAndgetWordDefinitionsFromKrDictApi(str: string) {
     const url = 'https://krdict.korean.go.kr/api/search';
     const params = {
       key: this.configService.get('app.krdictApiKey'),
@@ -355,11 +417,16 @@ export class WordService {
       const xmlData = response.data;
       const jsonData = await parseXmlToJson(xmlData);
       const structuredData = mapJsonToStructuredData(jsonData);
+      console.log(structuredData);
+      if (structuredData.total === 0) {
+        throw new InvalidWordException('KrDict에서 해당 단어를 찾을 수 없습니다.');
+      }
 
       const definitions = transformAndExtractDefinitions(structuredData);
-      return JSON.stringify(definitions);
+      return { success: true, definitions: JSON.stringify(definitions) };
     } catch (error) {
       console.error('Error fetching or processing data:', error.message);
+      return { success: false, definitions: null };
     }
   }
 }

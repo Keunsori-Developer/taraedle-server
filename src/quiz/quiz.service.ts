@@ -3,7 +3,7 @@ import { Quiz } from 'src/entity/quiz.entity';
 import { UserService } from 'src/user/user.service';
 import { WordService } from 'src/word/word.service';
 import { Repository } from 'typeorm';
-import { QuizAttemptReqDto } from './dto/quiz.request.dto';
+import { QuizAttemptReqDto, QuizStartReqDto } from './dto/quiz.request.dto';
 import {
   FinishedQuizException,
   InvalidQuizException,
@@ -22,7 +22,8 @@ export class QuizService {
     private readonly wordService: WordService,
   ) {}
 
-  async startNewQuiz(userId: string) {
+  async startNewQuiz(userId: string, dto: QuizStartReqDto) {
+    const { difficulty } = dto;
     const user = await this.userService.fineOneById(userId);
 
     if (!user) {
@@ -30,19 +31,21 @@ export class QuizService {
     }
 
     const uuid = uuidv4();
-    const randomWord = await this.wordService.getRandomWordForQuiz(userId, {});
+    const randomWord = await this.wordService.getRandomWordForQuiz(userId, difficulty);
 
     const quiz = await this.quizRepository.save({
       uuid,
       word: randomWord,
       user,
+      difficulty,
     });
-    console.log(quiz);
+
     return quiz;
   }
 
   async solveQuiz(userId: string, uuid: string, dto: QuizAttemptReqDto) {
-    const { answer } = dto;
+    const { attempts, solved } = dto;
+
     const quiz = await this.quizRepository.findOne({
       where: { uuid, user: { id: userId } },
       relations: { word: true },
@@ -52,17 +55,13 @@ export class QuizService {
       throw new InvalidQuizException();
     }
 
-    if (quiz.status === QuizStatus.SOLVED) {
+    if (quiz.status !== QuizStatus.IN_PROGRESS) {
       throw new FinishedQuizException();
     }
 
-    // 문제 풀이 성공
-    if (answer == quiz.word.value) {
-      quiz.status = QuizStatus.SOLVED;
-      quiz.attempts = (quiz.attempts ?? 0) + 1;
-    } else {
-      quiz.attempts = (quiz.attempts ?? 0) + 1;
-    }
+    //TODO: 현재 난이도의 maxAttempts 를 초과하는 attempts 는 허용하지 않도록 수정
+    quiz.attempts = attempts;
+    quiz.status = solved ? QuizStatus.SOLVED : QuizStatus.FAILED;
 
     const updatedQuiz = await this.quizRepository.save(quiz);
     return updatedQuiz;
