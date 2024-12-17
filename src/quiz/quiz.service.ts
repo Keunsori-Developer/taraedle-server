@@ -12,6 +12,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QuizStatus } from './enum/quiz.enum';
+import { DIFFICULTY_MAP } from './interface/quiz-difficulty.interface';
 
 @Injectable()
 export class QuizService {
@@ -40,7 +41,8 @@ export class QuizService {
       difficulty,
     });
 
-    return quiz;
+    const difficultyConfig: any = DIFFICULTY_MAP[difficulty];
+    return { quiz, difficultyConfig };
   }
 
   async solveQuiz(userId: string, uuid: string, dto: QuizAttemptReqDto) {
