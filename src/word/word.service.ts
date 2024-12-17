@@ -19,6 +19,7 @@ import { ConfigService } from '@nestjs/config';
 import { mapJsonToStructuredData, parseXmlToJson, transformAndExtractDefinitions } from './mapper/word.mapper';
 import { QuizDifficulty, QuizStatus } from 'src/quiz/enum/quiz.enum';
 import { DIFFICULTY_MAP } from 'src/quiz/interface/quiz-difficulty.interface';
+import hangul from 'hangul-js';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -114,6 +115,7 @@ export class WordService {
     }
 
     if (complexVowel !== undefined) {
+      console.log('complexVowel', complexVowel);
       randomWordQueryBuilder.andWhere('word.has_complex_vowel = :complexVowel', { complexVowel });
     }
 
@@ -150,7 +152,13 @@ export class WordService {
     for (const word of wordList) {
       const existingWord = await this.wordRepository.findOne({ where: { value: word } });
       if (!existingWord) {
-        const { length, count, complexConsonantCount, complexVowelCount, definitions } = await this.checkWord(word);
+        const { success, definitions } = await this.checkAndgetWordDefinitionsFromKrDictApi(word);
+
+        if (!success) {
+          continue;
+        }
+
+        const { length, count, complexConsonantCount, complexVowelCount } = await this.checkWord(word);
         const hasComplexConsonant = complexConsonantCount > 0;
         const hasComplexVowel = complexVowelCount > 0;
 
@@ -165,19 +173,40 @@ export class WordService {
     }
   }
 
-  async checkWord(word: string) {
-    try {
-      const { arr, complexConsonantCount, complexVowelCount } = this.decomposeConstants(
-        this.decomposeHangulString(word),
-      );
-      const length = word.length;
-      const count = arr.length;
-      const definitions = await this.getWordDefinitionsFromKrDictApi(word);
-      return { arr, length, count, complexConsonantCount, complexVowelCount, definitions };
-    } catch (error) {
-      console.error(error.message);
-      throw new InternalServerErrorException();
+  async getWordInfo(word: string) {
+    const transformedWord = hangul.assemble(word.split('')).trim();
+    let existingWord = await this.wordRepository.findOne({ where: { value: transformedWord } });
+
+    if (!existingWord) {
+      const { success, definitions } = await this.checkAndgetWordDefinitionsFromKrDictApi(transformedWord);
+
+      if (!success) {
+        throw new InvalidWordException();
+      }
+
+      const { length, count, complexConsonantCount, complexVowelCount } = await this.checkWord(transformedWord);
+      const hasComplexConsonant = complexConsonantCount > 0;
+      const hasComplexVowel = complexVowelCount > 0;
+
+      existingWord = await this.wordRepository.save({
+        value: transformedWord,
+        length,
+        count,
+        hasComplexConsonant,
+        hasComplexVowel,
+        definitions,
+      });
     }
+
+    return existingWord;
+  }
+
+  async checkWord(word: string) {
+    const { arr, complexConsonantCount, complexVowelCount } = this.decomposeConstants(this.decomposeHangulString(word));
+    const length = word.length;
+    const count = arr.length;
+
+    return { arr, length, count, complexConsonantCount, complexVowelCount };
   }
 
   /**
@@ -357,6 +386,35 @@ export class WordService {
     return streak;
   }
 
+  async checkAndgetWordDefinitionsFromKrDictApi(str: string) {
+    const url = 'https://krdict.korean.go.kr/api/search';
+    const params = {
+      key: this.configService.get('app.krdictApiKey'),
+      q: str,
+      advanced: 'y',
+      part: 'word',
+      method: 'exact',
+    };
+
+    try {
+      const response = await axios.get(url, { params });
+      const xmlData = response.data;
+      const jsonData = await parseXmlToJson(xmlData);
+      const structuredData = mapJsonToStructuredData(jsonData);
+      console.log(structuredData);
+      if (structuredData.total === 0) {
+        throw new InvalidWordException('KrDict에서 해당 단어를 찾을 수 없습니다.');
+      }
+
+      const definitions = transformAndExtractDefinitions(structuredData);
+      return { success: true, definitions: JSON.stringify(definitions) };
+    } catch (error) {
+      console.error('Error fetching or processing data:', error.message);
+      return { success: false, definitions: null };
+    }
+  }
+
+  // check~~ 함수 완성시킨 뒤에 삭제할 것.
   async getWordDefinitionsFromKrDictApi(str: string) {
     const url = 'https://krdict.korean.go.kr/api/search';
     const params = {
@@ -377,6 +435,7 @@ export class WordService {
       return JSON.stringify(definitions);
     } catch (error) {
       console.error('Error fetching or processing data:', error.message);
+      throw new InternalServerErrorException();
     }
   }
 }

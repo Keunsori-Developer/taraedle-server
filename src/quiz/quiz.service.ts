@@ -11,9 +11,7 @@ import {
 } from 'src/common/exception/invalid.exception';
 import { v4 as uuidv4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QuizDifficulty, QuizStatus } from './enum/quiz.enum';
-import * as hangul from 'hangul-js';
-import { DIFFICULTY_MAP } from './interface/quiz-difficulty.interface';
+import { QuizStatus } from './enum/quiz.enum';
 
 @Injectable()
 export class QuizService {
@@ -46,7 +44,8 @@ export class QuizService {
   }
 
   async solveQuiz(userId: string, uuid: string, dto: QuizAttemptReqDto) {
-    const { answer } = dto;
+    const { attempts, solved } = dto;
+
     const quiz = await this.quizRepository.findOne({
       where: { uuid, user: { id: userId } },
       relations: { word: true },
@@ -60,17 +59,9 @@ export class QuizService {
       throw new FinishedQuizException();
     }
 
-    const transformedAnswer = hangul.assemble(answer.split(''));
-    quiz.attempts = (quiz.attempts ?? 0) + 1;
-
-    // 문제 풀이 성공
-    if (transformedAnswer == quiz.word.value) {
-      quiz.status = QuizStatus.SOLVED;
-    } else {
-      if (quiz.attempts >= DIFFICULTY_MAP[QuizDifficulty[quiz.difficulty]].maxAttempts) {
-        quiz.status = QuizStatus.FAILED;
-      }
-    }
+    //TODO: 현재 난이도의 maxAttempts 를 초과하는 attempts 는 허용하지 않도록 수정
+    quiz.attempts = attempts;
+    quiz.status = solved ? QuizStatus.SOLVED : QuizStatus.FAILED;
 
     const updatedQuiz = await this.quizRepository.save(quiz);
     return updatedQuiz;

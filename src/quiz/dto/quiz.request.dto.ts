@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsUUID } from 'class-validator';
 
 import { IsNotEmpty } from 'class-validator';
 import { QuizDifficulty } from '../enum/quiz.enum';
@@ -13,7 +13,12 @@ export class QuizStartReqDto {
 
 export class QuizAttemptReqDto {
   @ApiProperty()
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
-  answer: string;
+  attempts: number;
+
+  @ApiProperty()
+  @IsBoolean()
+  @IsNotEmpty()
+  solved: boolean;
 }
