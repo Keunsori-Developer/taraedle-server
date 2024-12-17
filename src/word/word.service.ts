@@ -63,7 +63,13 @@ export class WordService {
 
     //TODO: null일때 리턴 이후에 db update 실행
     if (!randomWord.definitions || randomWord.length == 0) {
-      randomWord.definitions = await this.getWordDefinitionsFromKrDictApi(randomWord.value);
+      const { success, definitions } = await this.checkAndgetWordDefinitionsFromKrDictApi(randomWord.value);
+
+      if (!success) {
+        throw new InvalidWordException();
+      }
+
+      randomWord.definitions = definitions;
 
       await this.wordRepository.save(randomWord);
     }
@@ -133,8 +139,14 @@ export class WordService {
       throw new NotFoundWordException();
     }
 
-    if (!randomWord.definitions || randomWord.length == 0) {
-      randomWord.definitions = await this.getWordDefinitionsFromKrDictApi(randomWord.value);
+    if (!randomWord.definitions) {
+      const { success, definitions } = await this.checkAndgetWordDefinitionsFromKrDictApi(randomWord.value);
+
+      if (!success) {
+        throw new InternalServerErrorException();
+      }
+
+      randomWord.definitions = definitions;
       await this.wordRepository.save(randomWord);
     }
 
@@ -319,23 +331,26 @@ export class WordService {
     );
   }
 
+  //TODO: fix
   async getUserSolveData(user: User) {
     if (!user) {
       throw new InvalidUserException();
     }
-    const solveCount = (await this.solvedWordRepository.count({ where: { user: { id: user.id } } })) ?? 0;
-    const lastSolveRaw = await this.solvedWordRepository.findOne({
-      where: { user: { id: user.id }, isSolved: true },
-      order: { id: 'desc' },
-    });
+    // const solveCount = (await this.solvedWordRepository.count({ where: { user: { id: user.id } } })) ?? 0;
+    // const lastSolveRaw = await this.solvedWordRepository.findOne({
+    //   where: { user: { id: user.id }, isSolved: true },
+    //   order: { id: 'desc' },
+    // });
 
-    const solveStreak = await this.getCurrentSolveStreak(user.id);
+    // const solveStreak = await this.getCurrentSolveStreak(user.id);
 
-    const lastSolve = lastSolveRaw?.createdAt.toLocaleString() ?? null;
+    // const lastSolve = lastSolveRaw?.createdAt.toLocaleString() ?? null;
 
     const solveResDto = plainToInstance(
       UserSolveResDto,
-      { solveCount, lastSolve, solveStreak },
+      // { solveCount, lastSolve, solveStreak },
+      { solveCount: 0, lastSolve: null, solveStreak: 0 },
+
       {
         excludeExtraneousValues: true,
         enableImplicitConversion: true,
@@ -345,46 +360,47 @@ export class WordService {
     return solveResDto;
   }
 
-  async getCurrentSolveStreak(userId: User['id']) {
-    const solvedWords = await this.solvedWordRepository.find({
-      select: { createdAt: true },
-      where: { user: { id: userId }, isSolved: true },
-      order: { createdAt: 'DESC' }, // 날짜 순서대로 정렬
-    });
+  //TODO: SOLVE 대신 QUIZ로 변경
+  // async getCurrentSolveStreak(userId: User['id']) {
+  //   const solvedWords = await this.solvedWordRepository.find({
+  //     select: { createdAt: true },
+  //     where: { user: { id: userId }, isSolved: true },
+  //     order: { createdAt: 'DESC' }, // 날짜 순서대로 정렬
+  //   });
 
-    const solvedWordsInKoreaTime = solvedWords.map((word) => ({
-      ...word,
-      createdAt: dayjs(word.createdAt).tz().startOf('day'),
-    }));
+  //   const solvedWordsInKoreaTime = solvedWords.map((word) => ({
+  //     ...word,
+  //     createdAt: dayjs(word.createdAt).tz().startOf('day'),
+  //   }));
 
-    const solveDateArray = [...new Set(solvedWordsInKoreaTime.map((word) => word.createdAt))];
+  //   const solveDateArray = [...new Set(solvedWordsInKoreaTime.map((word) => word.createdAt))];
 
-    if (solveDateArray.length === 0) {
-      return 0;
-    }
-    // 처음은 오늘부터 확인
-    let targetDay = dayjs().startOf('day');
-    let streak = 0;
+  //   if (solveDateArray.length === 0) {
+  //     return 0;
+  //   }
+  //   // 처음은 오늘부터 확인
+  //   let targetDay = dayjs().startOf('day');
+  //   let streak = 0;
 
-    //오늘 풀었으면 1 추가
-    if (dayjs(solveDateArray[0]).isSame(targetDay)) {
-      streak = 1;
-    }
+  //   //오늘 풀었으면 1 추가
+  //   if (dayjs(solveDateArray[0]).isSame(targetDay)) {
+  //     streak = 1;
+  //   }
 
-    // 어제부터 이어서 확인
-    targetDay = targetDay.subtract(1, 'day');
+  //   // 어제부터 이어서 확인
+  //   targetDay = targetDay.subtract(1, 'day');
 
-    for (let i = 0; i < solveDateArray.length; i++) {
-      const solvedDate = dayjs(solveDateArray[i]);
-      if (solvedDate.isSame(targetDay)) {
-        targetDay = targetDay.subtract(1, 'day');
-        streak += 1;
-      } else {
-        break;
-      }
-    }
-    return streak;
-  }
+  //   for (let i = 0; i < solveDateArray.length; i++) {
+  //     const solvedDate = dayjs(solveDateArray[i]);
+  //     if (solvedDate.isSame(targetDay)) {
+  //       targetDay = targetDay.subtract(1, 'day');
+  //       streak += 1;
+  //     } else {
+  //       break;
+  //     }
+  //   }
+  //   return streak;
+  // }
 
   async checkAndgetWordDefinitionsFromKrDictApi(str: string) {
     const url = 'https://krdict.korean.go.kr/api/search';
@@ -411,31 +427,6 @@ export class WordService {
     } catch (error) {
       console.error('Error fetching or processing data:', error.message);
       return { success: false, definitions: null };
-    }
-  }
-
-  // check~~ 함수 완성시킨 뒤에 삭제할 것.
-  async getWordDefinitionsFromKrDictApi(str: string) {
-    const url = 'https://krdict.korean.go.kr/api/search';
-    const params = {
-      key: this.configService.get('app.krdictApiKey'),
-      q: str,
-      advanced: 'y',
-      part: 'word',
-      method: 'exact',
-    };
-
-    try {
-      const response = await axios.get(url, { params });
-      const xmlData = response.data;
-      const jsonData = await parseXmlToJson(xmlData);
-      const structuredData = mapJsonToStructuredData(jsonData);
-
-      const definitions = transformAndExtractDefinitions(structuredData);
-      return JSON.stringify(definitions);
-    } catch (error) {
-      console.error('Error fetching or processing data:', error.message);
-      throw new InternalServerErrorException();
     }
   }
 }

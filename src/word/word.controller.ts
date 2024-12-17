@@ -25,17 +25,6 @@ export class WordController {
     return await this.wordService.getRandomWord(dto);
   }
 
-  @ApiOperation({ summary: '랜덤한 단어 한개 반환, jwt 인증 필요', deprecated: true })
-  @ApiBearerAuth()
-  @ApiGetResponse(WordResDto)
-  @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.NOTFOUND_WORD]])
-  @UseGuards(AuthGuard('jwt'))
-  @Get('authtest')
-  @HttpCode(HttpStatus.OK)
-  async getWordAuth(@Query() dto: WordReqDto) {
-    return await this.wordService.getRandomWord(dto);
-  }
-
   @ApiOperation({
     summary: '단어 정보 확인',
     description:
