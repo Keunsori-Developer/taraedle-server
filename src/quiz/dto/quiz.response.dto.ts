@@ -10,6 +10,14 @@ export class QuizWordResDto {
   @ApiProperty()
   @Expose()
   definitions: string;
+
+  @ApiProperty()
+  @Expose()
+  length: number;
+
+  @ApiProperty()
+  @Expose()
+  count: number;
 }
 
 export class QuizDifficultyResDto {
