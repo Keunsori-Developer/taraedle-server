@@ -48,8 +48,7 @@ export class UserService {
   }
 
   async getMyUserData(user: JwtUserPayload) {
-    const solveData = await this.quizService.getDetailQuizStats(user);
-
+    const solveData = await this.quizService.getQuizStats(user);
     return { user, solveData };
   }
 }

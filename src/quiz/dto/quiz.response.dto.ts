@@ -94,27 +94,39 @@ export class QuizSolveResDto {
 }
 
 export class QuizStatsResDto {
-  @ApiProperty({ example: 2, type: 'number' })
+  @ApiProperty({ description: '난이도 상관 없이 풀이에 성공한 총 퀴즈의 수', example: 3, type: 'number' })
   @Expose()
-  solveCount: number;
+  solvedCnt: number;
 
-  @ApiProperty({ example: '2024. 8. 1. ���� 11:00:00' })
+  @ApiProperty({ description: '난이도 상관 없이 풀이를 시도한 총 퀴즈의 수', example: 6, type: 'number' })
+  @Expose()
+  totalCnt: number;
+
+  @ApiProperty({ description: '마지막으로 풀이에 성공한 날짜', example: '2025. 1. 1. 오후 12:00:00' })
   @Expose()
   lastSolve: string;
 
-  @ApiProperty({ example: 1 })
+  @ApiProperty({
+    description: '난이도별 풀이 성공 횟수, 시도 횟수, 연속 성공 횟수, 시도 횟수별 성공 횟수',
+    example: {
+      EASY: {
+        solvedCnt: 2,
+        totalCnt: 5,
+        solvedAttemptsStats: {
+          '3': 2,
+        },
+        solveStreak: 1,
+      },
+      MEDIUM: {
+        solvedCnt: 1,
+        totalCnt: 1,
+        solvedAttemptsStats: {
+          '6': 1,
+        },
+        solveStreak: 1,
+      },
+    },
+  })
   @Expose()
-  solveStreak: number;
-}
-
-export class QuizDetailStatsResDto extends QuizStatsResDto {
-  @ApiProperty({ example: { EASY: { totalSolved: 3, averageAttempts: 3.2, attemptCounts: { 1: 1, 2: 3, 3: 5 } } } })
-  @Expose()
-  detailedStats: QuizDifficultyStats;
-
-  static toDto(stats: any): QuizDetailStatsResDto {
-    console.log(stats);
-    const resDto = plainToInstance(QuizDetailStatsResDto, stats, { excludeExtraneousValues: true });
-    return resDto;
-  }
+  details: QuizDifficultyStats;
 }
