@@ -94,19 +94,20 @@ export class QuizSolveResDto {
 }
 
 export class QuizStatsResDto {
-  @ApiProperty({ example: 3, type: 'number' })
+  @ApiProperty({ description: '난이도 상관 없이 풀이에 성공한 총 퀴즈의 수', example: 3, type: 'number' })
   @Expose()
   solvedCnt: number;
 
-  @ApiProperty({ example: 6, type: 'number' })
+  @ApiProperty({ description: '난이도 상관 없이 풀이를 시도한 총 퀴즈의 수', example: 6, type: 'number' })
   @Expose()
   totalCnt: number;
 
-  @ApiProperty({ example: '2025. 1. 1. 오후 12:00:00' })
+  @ApiProperty({ description: '마지막으로 풀이에 성공한 날짜', example: '2025. 1. 1. 오후 12:00:00' })
   @Expose()
   lastSolve: string;
 
   @ApiProperty({
+    description: '난이도별 풀이 성공 횟수, 시도 횟수, 연속 성공 횟수, 시도 횟수별 성공 횟수',
     example: {
       EASY: {
         solvedCnt: 2,
