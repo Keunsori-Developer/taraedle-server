@@ -96,17 +96,30 @@ export class QuizSolveResDto {
 export class QuizStatsResDto {
   @ApiProperty({ example: 2, type: 'number' })
   @Expose()
-  solveCount: number;
+  solveCnt: number;
+
+  @ApiProperty({ example: 10, type: 'number' })
+  @Expose()
+  totalCnt: number;
 
   @ApiProperty({ example: '2025. 1. 1. 오후 12:00:00' })
   @Expose()
   lastSolve: string;
 
-  @ApiProperty({ example: 1 })
-  @Expose()
-  solveStreak: number;
-
-  @ApiProperty({ example: { EASY: { totalSolved: 3, averageAttempts: 3.2, attemptCounts: { 1: 1, 2: 3, 3: 5 } } } })
+  @ApiProperty({
+    example: {
+      EASY: {
+        solvedCnt: 11,
+        totalCnt: 20,
+        solveStreak: 3,
+        solvedAttemptsStats: {
+          '3': 2,
+          '4': 5,
+          '5': 4,
+        },
+      },
+    },
+  })
   @Expose()
   details: QuizDifficultyStats;
 }
