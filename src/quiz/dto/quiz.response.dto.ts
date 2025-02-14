@@ -94,11 +94,11 @@ export class QuizSolveResDto {
 }
 
 export class QuizStatsResDto {
-  @ApiProperty({ example: 2, type: 'number' })
+  @ApiProperty({ example: 3, type: 'number' })
   @Expose()
-  solveCnt: number;
+  solvedCnt: number;
 
-  @ApiProperty({ example: 10, type: 'number' })
+  @ApiProperty({ example: 6, type: 'number' })
   @Expose()
   totalCnt: number;
 
@@ -109,14 +109,20 @@ export class QuizStatsResDto {
   @ApiProperty({
     example: {
       EASY: {
-        solvedCnt: 11,
-        totalCnt: 20,
-        solveStreak: 3,
+        solvedCnt: 2,
+        totalCnt: 5,
         solvedAttemptsStats: {
           '3': 2,
-          '4': 5,
-          '5': 4,
         },
+        solveStreak: 1,
+      },
+      MEDIUM: {
+        solvedCnt: 1,
+        totalCnt: 1,
+        solvedAttemptsStats: {
+          '6': 1,
+        },
+        solveStreak: 1,
       },
     },
   })

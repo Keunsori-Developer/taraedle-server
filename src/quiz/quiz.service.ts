@@ -104,20 +104,22 @@ export class QuizService {
     for (const quiz of quizzes) {
       rawResults.totalCnt++;
 
-      if (quiz.status === QuizStatus.SOLVED) {
-        rawResults.solvedCnt++;
-        if (streakOn) {
-          rawResults.solveStreak++;
-        }
-      } else {
+      if (quiz.status === QuizStatus.FAILED) {
         streakOn = false;
+        continue;
       }
+
+      //SOLVED 인 경우 밑의 로직 실행행
+      rawResults.solvedCnt++;
 
       if (!rawResults.solvedAttemptsStats[quiz.attempts]) {
         rawResults.solvedAttemptsStats[quiz.attempts] = 0;
       }
-
       rawResults.solvedAttemptsStats[quiz.attempts]++;
+
+      if (streakOn) {
+        rawResults.solveStreak++;
+      }
     }
 
     return rawResults;
