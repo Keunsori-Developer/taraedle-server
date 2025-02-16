@@ -1,6 +1,7 @@
 import { ApiErrorResponseOption } from '../decorator/error-response.decorator';
 import { CustomExceptionCode } from '../enum/custom-exception-code.enum';
 import {
+  AlreadySolvedDailyChallengeException,
   FinishedQuizException,
   InvalidQuizException,
   InvalidUserException,
@@ -54,5 +55,11 @@ export const CustomErrorDefinitions: Record<CustomExceptionCode, ApiErrorRespons
     exampleTitle: CustomExceptionCode[CustomExceptionCode.NOTFOUND_WORD],
     exampleDescription: `해당 요청으로 단어가 존재하지 않음 (${CustomExceptionCode.NOTFOUND_WORD})`,
     code: CustomExceptionCode.NOTFOUND_WORD,
+  },
+  [CustomExceptionCode.ALREADY_SOLVED_DAILY_CHALLENGE]: {
+    model: AlreadySolvedDailyChallengeException,
+    exampleTitle: CustomExceptionCode[CustomExceptionCode.ALREADY_SOLVED_DAILY_CHALLENGE],
+    exampleDescription: `오늘은 이미 챌린지 퀴즈를 완료했습니다. (${CustomExceptionCode.ALREADY_SOLVED_DAILY_CHALLENGE})`,
+    code: CustomExceptionCode.ALREADY_SOLVED_DAILY_CHALLENGE,
   },
 };

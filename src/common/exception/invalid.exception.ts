@@ -33,3 +33,9 @@ export class FinishedQuizException extends InvalidException {
     super({ errorCode: CustomExceptionCode.FINISHED_QUIZ, message: message });
   }
 }
+
+export class AlreadySolvedDailyChallengeException extends InvalidException {
+  constructor(message?: string | HttpExceptionOptions) {
+    super({ errorCode: CustomExceptionCode.ALREADY_SOLVED_DAILY_CHALLENGE, message: message });
+  }
+}

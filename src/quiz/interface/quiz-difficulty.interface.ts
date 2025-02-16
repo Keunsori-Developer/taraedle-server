@@ -30,21 +30,21 @@ export const DIFFICULTY_MAP: Readonly<Record<QuizDifficulty, DifficultyConfig>> 
     maxAttempts: 6,
   },
   [QuizDifficulty.HARD]: {
-    lengthMin: 3,
+    lengthMin: 2,
     lengthMax: 3,
     countMin: 7,
-    countMax: 11,
+    countMax: 9,
     complexVowel: undefined,
     complexConsonant: undefined,
     maxAttempts: 6,
   },
-  [QuizDifficulty.VERYHARD]: {
+  [QuizDifficulty.CHALLENGE]: {
     lengthMin: 3,
     lengthMax: 4,
     countMin: 8,
-    countMax: 16,
+    countMax: 12,
     complexVowel: undefined,
     complexConsonant: undefined,
-    maxAttempts: 6,
+    maxAttempts: 7,
   },
 } as const;

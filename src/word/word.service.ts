@@ -7,7 +7,7 @@ import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc';
 import hangul from 'hangul-js';
 import { FINALS, INITIALS, MEDIALS } from 'src/common/constant/hangul.constant';
-import { InvalidWordException } from 'src/common/exception/invalid.exception';
+import { AlreadySolvedDailyChallengeException, InvalidWordException } from 'src/common/exception/invalid.exception';
 import { NotFoundWordException } from 'src/common/exception/notfound.exception';
 import { Word } from 'src/entity/word.entity';
 import { QuizDifficulty, QuizStatus } from 'src/quiz/enum/quiz.enum';
@@ -30,6 +30,22 @@ export class WordService {
       DIFFICULTY_MAP[difficulty] || DIFFICULTY_MAP['EASY'];
 
     const randomWordQueryBuilder = this.wordRepository.createQueryBuilder('word');
+
+    // 챌린지 하루 1회 제한
+    if (difficulty === QuizDifficulty.CHALLENGE) {
+      const hasAlreadySolvedToday = await this.wordRepository
+        .createQueryBuilder('word')
+        .innerJoin('quiz', 'quiz', 'quiz.word_id = word.id')
+        .where('quiz.user_id = :userId', { userId })
+        .andWhere('quiz.status <> :status', { status: QuizStatus.IN_PROGRESS })
+        .andWhere('quiz.difficulty = :difficulty', { difficulty: QuizDifficulty.CHALLENGE })
+        .andWhere('DATE(quiz.created_at) = CURRENT_DATE')
+        .getCount();
+
+      if (hasAlreadySolvedToday > 0) {
+        throw new AlreadySolvedDailyChallengeException();
+      }
+    }
 
     // 이미 풀었고 맞춘 단어들 제외
     randomWordQueryBuilder.where(

@@ -25,11 +25,14 @@ export class QuizController {
     ${QuizDifficulty.EASY} :      ${DIFFICULTY_MAP[QuizDifficulty.EASY].lengthMin}~${DIFFICULTY_MAP[QuizDifficulty.EASY].lengthMax}글자, ${DIFFICULTY_MAP[QuizDifficulty.EASY].countMin}~${DIFFICULTY_MAP[QuizDifficulty.EASY].countMax}개 자모음, 복합자모음 없음, 최대 ${DIFFICULTY_MAP[QuizDifficulty.EASY].maxAttempts}번 시도\n
     ${QuizDifficulty.MEDIUM} :    ${DIFFICULTY_MAP[QuizDifficulty.MEDIUM].lengthMin}~${DIFFICULTY_MAP[QuizDifficulty.MEDIUM].lengthMax}글자, ${DIFFICULTY_MAP[QuizDifficulty.MEDIUM].countMin}~${DIFFICULTY_MAP[QuizDifficulty.MEDIUM].countMax}개 자모음, 복합자모음 랜덤, 최대 ${DIFFICULTY_MAP[QuizDifficulty.MEDIUM].maxAttempts}번 시도\n
     ${QuizDifficulty.HARD} :      ${DIFFICULTY_MAP[QuizDifficulty.HARD].lengthMin}~${DIFFICULTY_MAP[QuizDifficulty.HARD].lengthMax}글자, ${DIFFICULTY_MAP[QuizDifficulty.HARD].countMin}~${DIFFICULTY_MAP[QuizDifficulty.HARD].countMax}개 자모음, 복합자모음 랜덤, 최대 ${DIFFICULTY_MAP[QuizDifficulty.HARD].maxAttempts}번 시도\n
-    ${QuizDifficulty.VERYHARD} :  ${DIFFICULTY_MAP[QuizDifficulty.VERYHARD].lengthMin}~${DIFFICULTY_MAP[QuizDifficulty.VERYHARD].lengthMax}글자, ${DIFFICULTY_MAP[QuizDifficulty.VERYHARD].countMin}~${DIFFICULTY_MAP[QuizDifficulty.VERYHARD].countMax}개 자모음, 복합자모음 랜덤, 최대 ${DIFFICULTY_MAP[QuizDifficulty.VERYHARD].maxAttempts}번 시도
+    ${QuizDifficulty.CHALLENGE} :  ${DIFFICULTY_MAP[QuizDifficulty.CHALLENGE].lengthMin}~${DIFFICULTY_MAP[QuizDifficulty.CHALLENGE].lengthMax}글자, ${DIFFICULTY_MAP[QuizDifficulty.CHALLENGE].countMin}~${DIFFICULTY_MAP[QuizDifficulty.CHALLENGE].countMax}개 자모음, 복합자모음 랜덤, 최대 ${DIFFICULTY_MAP[QuizDifficulty.CHALLENGE].maxAttempts}번 시도
     `,
   })
   @ApiPostResponse(QuizResDto)
-  @ApiErrorResponse([CustomErrorDefinitions[CustomExceptionCode.NOTFOUND_WORD]])
+  @ApiErrorResponse([
+    CustomErrorDefinitions[CustomExceptionCode.NOTFOUND_WORD],
+    CustomErrorDefinitions[CustomExceptionCode.ALREADY_SOLVED_DAILY_CHALLENGE],
+  ])
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async startNewQuiz(@Jwt() payload: JwtUserPayload, @Body() dto: QuizStartReqDto) {
