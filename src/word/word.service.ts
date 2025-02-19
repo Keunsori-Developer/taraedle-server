@@ -7,13 +7,14 @@ import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc';
 import hangul from 'hangul-js';
 import { FINALS, INITIALS, MEDIALS } from 'src/common/constant/hangul.constant';
-import { AlreadySolvedDailyChallengeException, InvalidWordException } from 'src/common/exception/invalid.exception';
+import { InvalidWordException } from 'src/common/exception/invalid.exception';
 import { NotFoundWordException } from 'src/common/exception/notfound.exception';
 import { Word } from 'src/entity/word.entity';
 import { QuizDifficulty, QuizStatus } from 'src/quiz/enum/quiz.enum';
 import { DIFFICULTY_MAP } from 'src/quiz/interface/quiz-difficulty.interface';
 import { Repository } from 'typeorm';
 import { mapJsonToStructuredData, parseXmlToJson, transformAndExtractDefinitions } from './mapper/word.mapper';
+import { DailyChallengeWord } from 'src/entity/daily-challenge-word';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -22,6 +23,7 @@ dayjs.tz.setDefault('Asia/Seoul');
 export class WordService {
   constructor(
     @InjectRepository(Word) private wordRepository: Repository<Word>,
+    @InjectRepository(DailyChallengeWord) private dailyChallengeWordRepository: Repository<DailyChallengeWord>,
     private readonly configService: ConfigService,
   ) {}
 
@@ -31,20 +33,21 @@ export class WordService {
 
     const randomWordQueryBuilder = this.wordRepository.createQueryBuilder('word');
 
-    // 챌린지 하루 1회 제한
+    //챌린지일경우 데일리 챌린지 단어 리턴
     if (difficulty === QuizDifficulty.CHALLENGE) {
-      const hasAlreadySolvedToday = await this.wordRepository
-        .createQueryBuilder('word')
-        .innerJoin('quiz', 'quiz', 'quiz.word_id = word.id')
-        .where('quiz.user_id = :userId', { userId })
-        .andWhere('quiz.status <> :status', { status: QuizStatus.IN_PROGRESS })
-        .andWhere('quiz.difficulty = :difficulty', { difficulty: QuizDifficulty.CHALLENGE })
-        .andWhere('DATE(quiz.created_at) = CURRENT_DATE')
-        .getCount();
+      const today = new Date();
+      const todayDailyChallenge = await this.dailyChallengeWordRepository.findOne({
+        where: { date: today },
+        relations: { word: true },
+      });
 
-      if (hasAlreadySolvedToday > 0) {
-        throw new AlreadySolvedDailyChallengeException();
+      if (!todayDailyChallenge || !todayDailyChallenge.word) {
+        throw new NotFoundWordException();
       }
+
+      const todayDailyChallengeWord = todayDailyChallenge.word;
+
+      return todayDailyChallengeWord;
     }
 
     // 이미 풀었고 맞춘 단어들 제외
@@ -104,12 +107,48 @@ export class WordService {
     return randomWord;
   }
 
+  async getRandomWordForDailyChallenge() {
+    const randomWordQueryBuilder = this.wordRepository.createQueryBuilder('word');
+
+    const challengeDifficultyConfig = DIFFICULTY_MAP[QuizDifficulty.CHALLENGE];
+
+    const { lengthMin, lengthMax, countMin, countMax, complexVowel, complexConsonant } = challengeDifficultyConfig;
+
+    randomWordQueryBuilder.andWhere('word.id NOT IN (SELECT word_id FROM daily_challenge)');
+
+    randomWordQueryBuilder.andWhere('word.length BETWEEN :lengthMin AND :lengthMax', {
+      lengthMin,
+      lengthMax,
+    });
+
+    randomWordQueryBuilder.andWhere('word.count BETWEEN :countMin AND :countMax', {
+      countMin,
+      countMax,
+    });
+
+    if (complexVowel !== undefined) {
+      randomWordQueryBuilder.andWhere('word.has_complex_vowel = :complexVowel', { complexVowel });
+    }
+
+    if (complexConsonant !== undefined) {
+      randomWordQueryBuilder.andWhere('word.has_complex_consonant = :complexConsonant', {
+        complexConsonant,
+      });
+    }
+
+    randomWordQueryBuilder.orderBy('RANDOM()').limit(1);
+
+    const randomWord = await randomWordQueryBuilder.getOne();
+
+    return randomWord;
+  }
+
   async getWordInfo(word: string) {
     const transformedWord = hangul.assemble(word.split('')).trim();
     let existingWord = await this.wordRepository.findOne({ where: { value: transformedWord } });
 
     if (existingWord && !existingWord.definitions) {
-      const { success, definitions } = await this.checkAndgetWordDefinitionsFromStDictApi(transformedWord);
+      const { definitions } = await this.checkAndgetWordDefinitionsFromStDictApi(transformedWord);
 
       existingWord.definitions = definitions;
       await this.wordRepository.save(existingWord);
