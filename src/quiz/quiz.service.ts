@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtUserPayload } from 'src/common/decorator/jwt-payload.decorator';
-import { FinishedQuizException, InvalidQuizException } from 'src/common/exception/invalid.exception';
+import {
+  AlreadySolvedDailyChallengeException,
+  FinishedQuizException,
+  InvalidQuizException,
+} from 'src/common/exception/invalid.exception';
 import { Quiz } from 'src/entity/quiz.entity';
 import { WordService } from 'src/word/word.service';
 import { Not, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { QuizAttemptReqDto, QuizStartReqDto } from './dto/quiz.request.dto';
-import { QuizStatus } from './enum/quiz.enum';
+import { QuizDifficulty, QuizStatus } from './enum/quiz.enum';
 import { DIFFICULTY_MAP } from './interface/quiz-difficulty.interface';
 import { QuizDifficultyStats, QuizRawStats } from './interface/quiz.interface';
 
@@ -21,6 +25,20 @@ export class QuizService {
 
   async startNewQuiz(user: JwtUserPayload, dto: QuizStartReqDto) {
     const { difficulty } = dto;
+
+    if (difficulty === QuizDifficulty.CHALLENGE) {
+      const todayDailyChallengeAttempt = await this.quizRepository
+        .createQueryBuilder('quiz')
+        .where('quiz.user_id = :userId', { userId: user.id })
+        .andWhere('quiz.difficulty = :difficulty', { difficulty: QuizDifficulty.CHALLENGE })
+        .andWhere('quiz.status != :status', { status: QuizStatus.IN_PROGRESS })
+        .andWhere('DATE(quiz.created_at) >= DATE(:today)', { today: new Date() })
+        .getMany();
+
+      if (todayDailyChallengeAttempt.length >= 1) {
+        throw new AlreadySolvedDailyChallengeException();
+      }
+    }
 
     const uuid = uuidv4();
     const randomWord = await this.wordService.getRandomWordForQuiz(user.id, difficulty);

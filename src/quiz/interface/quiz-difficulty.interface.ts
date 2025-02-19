@@ -42,9 +42,9 @@ export const DIFFICULTY_MAP: Readonly<Record<QuizDifficulty, DifficultyConfig>> 
     lengthMin: 3,
     lengthMax: 4,
     countMin: 8,
-    countMax: 12,
+    countMax: 11,
     complexVowel: undefined,
     complexConsonant: undefined,
-    maxAttempts: 7,
+    maxAttempts: 8,
   },
 } as const;
