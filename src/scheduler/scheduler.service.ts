@@ -15,40 +15,39 @@ export class SchedulerService {
 
   @Cron(CronExpression.EVERY_6_HOURS, { timeZone: 'Asia/Seoul' })
   async handleDailyChallenge() {
-    console.log('handleDailyChallenge');
-    // const today = new Date();
+    const today = new Date();
 
-    // const todayDailyChallenge = await this.dailyChallengeRepository.findOne({ where: { date: today } });
+    const todayDailyChallenge = await this.dailyChallengeRepository.findOne({ where: { date: today } });
 
-    // if (!todayDailyChallenge) {
-    //   const randomDailyChallengeWord = await this.wordService.getRandomWordForDailyChallenge();
+    if (!todayDailyChallenge) {
+      const randomDailyChallengeWord = await this.wordService.getRandomWordForDailyChallenge();
 
-    //   if (!randomDailyChallengeWord) {
-    //     return;
-    //   }
+      if (!randomDailyChallengeWord) {
+        return;
+      }
 
-    //   await this.dailyChallengeRepository.save({
-    //     date: today,
-    //     word: randomDailyChallengeWord,
-    //   });
-    // }
+      await this.dailyChallengeRepository.save({
+        date: today,
+        word: randomDailyChallengeWord,
+      });
+    }
 
-    // const tomorrow = new Date();
-    // tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // const tomorrowDailyChallenge = await this.dailyChallengeRepository.findOne({ where: { date: tomorrow } });
+    const tomorrowDailyChallenge = await this.dailyChallengeRepository.findOne({ where: { date: tomorrow } });
 
-    // if (!tomorrowDailyChallenge) {
-    //   const randomDailyChallengeWord = await this.wordService.getRandomWordForDailyChallenge();
+    if (!tomorrowDailyChallenge) {
+      const randomDailyChallengeWord = await this.wordService.getRandomWordForDailyChallenge();
 
-    //   if (!randomDailyChallengeWord) {
-    //     return;
-    //   }
+      if (!randomDailyChallengeWord) {
+        return;
+      }
 
-    //   await this.dailyChallengeRepository.save({
-    //     date: tomorrow,
-    //     word: randomDailyChallengeWord,
-    //   });
-    // }
+      await this.dailyChallengeRepository.save({
+        date: tomorrow,
+        word: randomDailyChallengeWord,
+      });
+    }
   }
 }
