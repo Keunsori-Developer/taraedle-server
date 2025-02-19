@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomUUID } from 'crypto';
 import { JwtUserPayload } from 'src/common/decorator/jwt-payload.decorator';
 import {
   AlreadySolvedDailyChallengeException,
@@ -9,7 +10,6 @@ import {
 import { Quiz } from 'src/entity/quiz.entity';
 import { WordService } from 'src/word/word.service';
 import { Not, Repository } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
 import { QuizAttemptReqDto, QuizStartReqDto } from './dto/quiz.request.dto';
 import { QuizDifficulty, QuizStatus } from './enum/quiz.enum';
 import { DIFFICULTY_MAP } from './interface/quiz-difficulty.interface';
@@ -40,7 +40,7 @@ export class QuizService {
       }
     }
 
-    const uuid = uuidv4();
+    const uuid = randomUUID();
     const randomWord = await this.wordService.getRandomWordForQuiz(user.id, difficulty);
 
     const quiz = await this.quizRepository.save({

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomUUID } from 'crypto';
+import { JwtUserPayload } from 'src/common/decorator/jwt-payload.decorator';
 import { GoogleUser, GuestUser } from 'src/common/interface/provider-user.interface';
 import { User } from 'src/entity/user.entity';
 import { QuizService } from 'src/quiz/quiz.service';
 import { Repository } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
 import { UserProvider } from './enum/user-provider.enum';
-import { JwtUserPayload } from 'src/common/decorator/jwt-payload.decorator';
 
 @Injectable()
 export class UserService {
@@ -24,7 +24,7 @@ export class UserService {
   }
 
   async createGuestUser() {
-    const uuid = uuidv4();
+    const uuid = randomUUID();
 
     const guestUser: GuestUser = {
       name: `Guest${uuid.slice(0, 4)}`,
