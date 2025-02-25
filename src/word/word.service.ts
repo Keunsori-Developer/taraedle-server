@@ -9,12 +9,12 @@ import hangul from 'hangul-js';
 import { FINALS, INITIALS, MEDIALS } from 'src/common/constant/hangul.constant';
 import { InvalidWordException } from 'src/common/exception/invalid.exception';
 import { NotFoundWordException } from 'src/common/exception/notfound.exception';
+import { DailyChallengeWord } from 'src/entity/daily-challenge-word';
 import { Word } from 'src/entity/word.entity';
 import { QuizDifficulty, QuizStatus } from 'src/quiz/enum/quiz.enum';
 import { DIFFICULTY_MAP } from 'src/quiz/interface/quiz-difficulty.interface';
 import { Repository } from 'typeorm';
 import { mapJsonToStructuredData, parseXmlToJson, transformAndExtractDefinitions } from './mapper/word.mapper';
-import { DailyChallengeWord } from 'src/entity/daily-challenge-word';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -114,7 +114,7 @@ export class WordService {
 
     const { lengthMin, lengthMax, countMin, countMax, complexVowel, complexConsonant } = challengeDifficultyConfig;
 
-    randomWordQueryBuilder.andWhere('word.id NOT IN (SELECT word_id FROM daily_challenge)');
+    randomWordQueryBuilder.andWhere('word.id NOT IN (SELECT word_id FROM daily_challenge_word)');
 
     randomWordQueryBuilder.andWhere('word.length BETWEEN :lengthMin AND :lengthMax', {
       lengthMin,
