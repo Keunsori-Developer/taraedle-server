@@ -93,6 +93,7 @@ jobs:
 
           ssh -tt -i ~/.ssh/id_ed25519 $USER@$IP docker run -d \
           -e NODE_ENV=dev \
+          - TZ=Asia/Seoul \
           --name $NAME \
           --expose 8000 \
           --network=nginx-proxy \

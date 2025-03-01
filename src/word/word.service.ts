@@ -2,9 +2,6 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone.js';
-import utc from 'dayjs/plugin/utc';
 import hangul from 'hangul-js';
 import { FINALS, INITIALS, MEDIALS } from 'src/common/constant/hangul.constant';
 import { InvalidWordException } from 'src/common/exception/invalid.exception';
@@ -16,9 +13,6 @@ import { DIFFICULTY_MAP } from 'src/quiz/interface/quiz-difficulty.interface';
 import { Repository } from 'typeorm';
 import { mapJsonToStructuredData, parseXmlToJson, transformAndExtractDefinitions } from './mapper/word.mapper';
 
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.tz.setDefault('Asia/Seoul');
 @Injectable()
 export class WordService {
   constructor(
