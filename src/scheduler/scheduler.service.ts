@@ -13,7 +13,7 @@ export class SchedulerService {
     private readonly wordService: WordService,
   ) {}
 
-  @Cron(CronExpression.EVERY_10_SECONDS, { timeZone: 'Asia/Seoul' })
+  @Cron(CronExpression.EVERY_6_HOURS, { timeZone: 'Asia/Seoul' })
   async handleDailyChallenge() {
     const today = new Date();
 
